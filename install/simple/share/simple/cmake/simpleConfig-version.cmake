@@ -1,1 +1,0 @@
-/home/owhenthesaints/robot_competition/build/simple/ament_cmake_core/simpleConfig-version.cmake
