@@ -5,12 +5,14 @@ project(example_package_cpp)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+
 
 
 set(dependencies rclcpp)
 
 add_executable(example src/example.cpp)
-ament_target_dependencies(example ${dependencies})
+ament_target_dependencies(example rclcpp std_msgs)
 target_link_libraries(example wiringPi)
 
 install (TARGETS
