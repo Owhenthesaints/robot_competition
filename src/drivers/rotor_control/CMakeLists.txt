@@ -9,6 +9,8 @@ find_package(example_interfaces REQUIRED)
 set(DEBUG 1)
 set(VECTOR_INSTRUCTIONS 1)
 
+add_compile_definitions(DEBUG)
+add_compile_definitions(VECTOR_INSTRUCTIONS)
 
 
 add_executable(rotor_control src/rotor_control.cpp)
