@@ -27,8 +27,8 @@ public:
 private:
     #ifdef VECTOR_INSTRUCTIONS
     void timer_callback(){
-        auto wheel1 = example_interfaces::msg::Int8();
-        auto wheel2 = example_interfaces::msg::Int8();
+        auto wheel1 = MessageType();
+        auto wheel2 = MessageType();
         // implement vector logic here
         #ifdef DEBUG
         // placeholder values
