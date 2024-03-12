@@ -2,10 +2,18 @@
 #include "example_interfaces/msg/int8.hpp"
 #include <iostream>
 #include <vector>
+#include <memory>
+
 
 
 using namespace std::chrono_literals;
 
+/* 
+ * @brief This is a higher level class that will handle the controls of the motors 
+ * 
+ * This class will hopefully offer a very flexible of inputting motor commands. The intended way for now will be 2d vectors transformed into
+ * motor commands but through preprocessor directives we leave the door open to other ways
+ * */
 template<typename MessageType>
 class MainControlRotor : public rclcpp::Node
 {
@@ -19,7 +27,7 @@ public:
         #else
         publisher_vector_();
         for (size_t i =0; i++; i<num_children){
-            publisher_vector_.push_back(this-> create_publisher<MessageType>("motor_updates/m1"+std::to_string(i), 10));
+            publisher_vector_.push_back(this-> create_publisher<MessageType>("motor_updates/m"+std::to_string(i), 10));
         }
         #endif
         timer_ = this-> create_wall_timer(500ms, std::bind(&MainControlRotor::timer_callback, this));
@@ -49,17 +57,44 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     // either two publishers for trigo or one vector of publishers
     #ifdef VECTOR_INSTRUCTIONS
+    //if the class is built with vector instructions only need 2 publishers one for the left wheel the other for the right
     std::shared_ptr<rclcpp::Publisher<MessageType>> publisher_1_;
     std::shared_ptr<rclcpp::Publisher<MessageType>> publisher_2_;
     #else
+    // otherwise have to implement other control scheme
     std::vector<std::shared_ptr<rclcpp::Publisher<MessageType>>> publisher_vector_;
     #endif
 };
 
+using std::placeholders::_1;
+
+template<typename MessageType>
+class MotorController : public rclcpp::Node 
+{
+public:
+    MotorController() : Node("motor_node_"+std::to_string(id))
+    {
+        id++;
+        subscription_ = this-> create_subscription<MessageType>("motor_updates/m" + std::to_string(id), 10, std::bind(&MotorController::topic_callback, this, _1)); 
+    }
+    
+
+private:
+    void topic_callback(const std::shared_ptr<MessageType> msg) const 
+    {
+        RCLCPP_INFO(this->get_logger(), "I heard '%d'", msg->data);
+    }
+    static uint8_t id;
+    std::shared_ptr<rclcpp::Subscription<MessageType>> subscription_;
+};
+
+template<typename MessageType>
+uint8_t MotorController<MessageType>::id = 0;
+
 
 int main(int argc, char * argv[]){
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<MainControlRotor<example_interfaces::msg::Int8>>());
+    rclcpp::spin(std::make_shared<MotorController<example_interfaces::msg::Int8>>());
     rclcpp::shutdown();
     return 0;
 }
