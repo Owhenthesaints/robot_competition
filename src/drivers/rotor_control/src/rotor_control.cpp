@@ -60,8 +60,8 @@ private:
 #ifdef DEBUG
         // placeholder values
         RCLCPP_DEBUG(this->get_logger(), "debug mod wheels always have the same value");
-        wheel1.data = wheelArray[0];
-        wheel2.data = wheelArray[1];
+        wheel1.data = 25;
+        wheel2.data = 25;
 #endif // ENDOF_DEBUG
         RCLCPP_INFO(this->get_logger(), "Publishing wheel 0: '%d'", wheel1.data);
         RCLCPP_INFO(this->get_logger(), "Publishing wheel 1: '%d'", wheel2.data);
@@ -89,15 +89,20 @@ private:
 };
 
 
+/*
+ * @brief a class to control the different motors individually
+ *
+ * A class which automatically controls a number of different motors affected to each pin*/
 template<typename SubscriptionType>
 class MotorController : public rclcpp::Node 
 {
 public:
     MotorController() : Node("motor_node_"+std::to_string(id))
     {
+        RCLCPP_INFO(this->get_logger(), "hello world");
         RCLCPP_DEBUG(this->get_logger(), "initialising Motor Controller '%d'", id);
-        id++;
         subscription_ = this-> create_subscription<SubscriptionType>("motor_updates/m" + std::to_string(id), 10, std::bind(&MotorController::topic_callback, this, _1)); 
+        id++;
     }
     
 
@@ -116,7 +121,14 @@ uint8_t MotorController<SubscriptionType>::id = 0;
 
 int main(int argc, char * argv[]){
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<MotorController<comType>>());
+    rclcpp::executors::StaticSingleThreadedExecutor executor;
+    auto control_node = std::make_shared<MainControlRotor<comType, arrivalType>>();
+    auto motor_node_0 = std::make_shared<MotorController<comType>>();
+    auto motor_node_1 = std::make_shared<MotorController<comType>>();
+    executor.add_node(control_node);
+    executor.add_node(motor_node_0);
+    executor.add_node(motor_node_1);
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }
