@@ -1,9 +1,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "example_interfaces/msg/int8.hpp"
 #include "example_interfaces/msg/int8_multi_array.hpp"
+#include <wiringPi.h>
 #include <iostream>
 #include <vector>
 #include <memory>
+#define PWM_PIN 24
 
 // change communication type between two classes
 typedef example_interfaces::msg::Int8 comType;
@@ -32,8 +34,8 @@ public:
 #ifdef VECTOR_INSTRUCTIONS
         //define two publishers for different topics
         RCLCPP_DEBUG(this-> get_logger(), "starting vector instruction implementation init");
-        wheelArray[0] = 0;
-        wheelArray[1] = 0;
+        wheelArray[0] = 25;
+        wheelArray[1] = 25;
         publisher_1_ = this-> create_publisher<MessageType>("motor_updates/m0", 10); 
         publisher_2_ = this-> create_publisher<MessageType>("motor_updates/m1", 10);
         subscriber_ = this-> create_subscription<SubscriptionType>("motor_updates/direction", 10, std::bind(&MainControlRotor::rotor_values_update, this, _1));
@@ -110,6 +112,9 @@ private:
     void topic_callback(const std::shared_ptr<SubscriptionType> msg) const 
     {
         RCLCPP_INFO(this->get_logger(), "I heard '%d'", msg->data);
+        uint16_t  pwmValue= std::floor(msg->data * 10);
+        pwmWrite(PWM_PIN, pwmValue);
+
     }
     static uint8_t id;
     std::shared_ptr<rclcpp::Subscription<SubscriptionType>> subscription_;
@@ -120,6 +125,9 @@ uint8_t MotorController<SubscriptionType>::id = 0;
 
 
 int main(int argc, char * argv[]){
+    if(wiringPiSetup()==-1)
+        exit(10);
+    pinMode(1, PWM_OUTPUT);
     rclcpp::init(argc, argv);
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     auto control_node = std::make_shared<MainControlRotor<comType, arrivalType>>();
@@ -130,5 +138,6 @@ int main(int argc, char * argv[]){
     executor.add_node(motor_node_1);
     executor.spin();
     rclcpp::shutdown();
+    pinMode(PWM_PIN, INPUT);
     return 0;
 }
