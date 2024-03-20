@@ -26,7 +26,7 @@ int main(){
 
     cap.release();
 
-    string directory = cv::getenv("HOME")+ "/captured_image.jpg";
+    string directory = string(getenv("HOME"))+ "/captured_image.jpg";
 
     cv::imwrite(directory, frame);
 
