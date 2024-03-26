@@ -13,7 +13,7 @@ class SerialSender : public rclcpp::Node {
 public:
     SerialSender(const char * arduino_input = "/dev/ttyACM0"): Node("serial_sender"), io(), serial(io, arduino_input){
         //setup timer
-        timer_ = this->create_wall_timer(100ms, std::bind(&SerialSender::timer_callback, this));
+        timer_ = this->create_wall_timer(25ms, std::bind(&SerialSender::timer_callback, this));
         //setup publisher
         publisher_ = this->create_publisher<MessageType>("/local_avoidance/instructions", 10);
         //setup serial
