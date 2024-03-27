@@ -11,22 +11,36 @@ template<class ImageMessageType>
 class CameraNode: public rclcpp::Node {
 public:
     CameraNode(): rclcpp::Node("camera_node"){
+        // initialise publisher
         image_publisher_ = this->create_publisher<ImageMessageType>("imaging/image_update/image", 10);
-        timer_ = this->create_wall_timer(500ms, std::bind(&CameraNode::timer_callback, this));
+        // initialise timer
+        timer_ = this->create_wall_timer(1000ms, std::bind(&CameraNode::timer_callback, this));
+        // init camera
+        cap.open(0);
+        if (!cap.isOpened()) {
+            RCLCPP_INFO(this->get_logger(), "Could not open camera");
+            exit(0);
+        }
+    }
+
+    ~CameraNode(){
+        cap.release();
     }
 private:
     void timer_callback(){
-        cv::Mat my_image(cv::Size(640, 480), CV_8UC3);
-        cv::randu(my_image, cv::Scalar(0,0,0), cv::Scalar(255, 255, 255));
-        msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", my_image).toImageMsg();
+        cv::Mat frame;
+        cap>>frame;
+        msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
         image_publisher_->publish(*msg_.get());
         RCLCPP_INFO(this->get_logger(), "Image %ld publisher", count_);
         count_++;
     }
+
     std::shared_ptr<rclcpp::Publisher<ImageMessageType>> image_publisher_;
     std::shared_ptr<rclcpp::TimerBase> timer_;
     std::shared_ptr<ImageMessageType> msg_;
     size_t count_;
+    cv::VideoCapture cap;
 };
 
 
