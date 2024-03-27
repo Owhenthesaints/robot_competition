@@ -10,11 +10,13 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(std_msgs REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(camera_tranciever src/camera_node.cpp)
-ament_target_dependencies(camera_tranciever rclcpp sensor_msgs)
+ament_target_dependencies(camera_tranciever rclcpp sensor_msgs  cv_bridge std_msgs)
 target_link_libraries(camera_tranciever ${OpenCV_LIBS})
 
 install (TARGETS
