@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(cpp_pubsub)
+project(image_reciever)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -13,12 +13,17 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
+
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(image_reciever src/image_reciever.cpp)
-ament_target_dependencies(image_reciever rclcpp sensor_msgs)
+ament_target_dependencies(image_reciever rclcpp sensor_msgs cv_bridge)
+target_link_libraries(image_reciever ${OpenCV_LIBS})
 
 install(TARGETS
-  talker
+  image_reciever
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
