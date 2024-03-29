@@ -5,7 +5,8 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-#define PWM_PIN 24
+
+#define PWM_PIN 1
 
 // change communication type between two classes
 typedef example_interfaces::msg::Int8 comType;
@@ -111,8 +112,9 @@ public:
 private:
     void topic_callback(const std::shared_ptr<SubscriptionType> msg) const 
     {
-        RCLCPP_INFO(this->get_logger(), "I heard '%d'", msg->data);
+        RCLCPP_INFO(this->get_logger(), "writing to pin '%d'", PWM_PIN);
         uint16_t  pwmValue= std::floor(msg->data * 10);
+        RCLCPP_INFO(this->get_logger(), "callback writing '%d'", pwmValue);
         pwmWrite(PWM_PIN, pwmValue);
 
     }
