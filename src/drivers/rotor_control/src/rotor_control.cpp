@@ -32,7 +32,6 @@ public:
         RCLCPP_DEBUG(this-> get_logger(), "starting init MainControlRotor");
         timer_ = this-> create_wall_timer(500ms, std::bind(&MainControlRotor::timer_callback, this));
         wheelArray = new int8_t[num_children];
-#ifdef VECTOR_INSTRUCTIONS
         //define two publishers for different topics
         RCLCPP_DEBUG(this-> get_logger(), "starting vector instruction implementation init");
         wheelArray[0] = 0;
@@ -40,21 +39,15 @@ public:
         publisher_1_ = this-> create_publisher<MessageType>("motor_updates/m0", 10); 
         publisher_2_ = this-> create_publisher<MessageType>("motor_updates/m1", 10);
         subscriber_ = this-> create_subscription<SubscriptionType>("motor_updates/direction", 10, std::bind(&MainControlRotor::rotor_values_update, this, _1));
-#else
-        RCLCPP_DEBUG(this -> get_logger(), "starting non vector instruction init");
-        publisher_vector_();
-        for (size_t i =0; i++; i<num_children){
-            publisher_vector_.push_back(this-> create_publisher<MessageType>("motor_updates/m"+std::to_string(i), 10));
-        }
-#endif
     }
 private:
-#ifdef VECTOR_INSTRUCTIONS
-    void rotor_values_update(std::shared_ptr<SubscriptionType> msg){
-        RCLCPP_DEBUG(this-> get_logger(), "updated wheel values");
-        wheelArray[0] = msg->data[0];
-        wheelArray[1] = msg->data[1];
+
+    void rotor_values_update(const SubscriptionType & msg){
+        RCLCPP_INFO(this-> get_logger(), "updated wheel values");
+        wheelArray[0] = msg.data[0];
+        wheelArray[1] = msg.data[1];
     }
+
     void timer_callback(){
         RCLCPP_DEBUG(this->get_logger(), "entering timer callback");
         auto wheel1 = MessageType();
@@ -71,12 +64,6 @@ private:
         publisher_1_-> publish(wheel1);
         publisher_2_-> publish(wheel2);
     }
-#else // ENDOF_VECTOR_INSTRUCTIONS
-    void timer_callback(){
-        auto message = MessageType();
-        // to implement
-    }
-#endif // ENDOF_NOT_VECTOR_INSTRUCTIONS
     rclcpp::TimerBase::SharedPtr timer_;
     int8_t * wheelArray;
     // either two publishers for trigo or one vector of publishers
@@ -102,7 +89,6 @@ class MotorController : public rclcpp::Node
 public:
     MotorController() : Node("motor_node_"+std::to_string(id))
     {
-        RCLCPP_INFO(this->get_logger(), "hello world");
         RCLCPP_DEBUG(this->get_logger(), "initialising Motor Controller '%d'", id);
         subscription_ = this-> create_subscription<SubscriptionType>("motor_updates/m" + std::to_string(id), 10, std::bind(&MotorController::topic_callback, this, _1)); 
         id++;
