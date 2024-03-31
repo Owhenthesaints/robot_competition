@@ -35,8 +35,8 @@ public:
 #ifdef VECTOR_INSTRUCTIONS
         //define two publishers for different topics
         RCLCPP_DEBUG(this-> get_logger(), "starting vector instruction implementation init");
-        wheelArray[0] = 25;
-        wheelArray[1] = 25;
+        wheelArray[0] = 0;
+        wheelArray[1] = 0;
         publisher_1_ = this-> create_publisher<MessageType>("motor_updates/m0", 10); 
         publisher_2_ = this-> create_publisher<MessageType>("motor_updates/m1", 10);
         subscriber_ = this-> create_subscription<SubscriptionType>("motor_updates/direction", 10, std::bind(&MainControlRotor::rotor_values_update, this, _1));
