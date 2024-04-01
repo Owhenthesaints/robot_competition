@@ -6,8 +6,8 @@
 #include <vector>
 #include <memory>
 
-#define PWM_PIN_1 1
-#define PWM_PIN_2 29
+#define PWM_PIN_1 23
+#define PWM_PIN_2 26
 
 
 // change communication type between two classes
