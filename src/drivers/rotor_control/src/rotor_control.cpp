@@ -9,6 +9,10 @@
 
 #define PWM_PIN_1 23
 #define PWM_PIN_2 26
+#define CONVERSION_CONSTANT 10.23
+#define MAX_SPEED_CST 100
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 
 // change communication type between two classes
@@ -56,8 +60,8 @@ private:
         auto wheel1 = MessageType();
         auto wheel2 = MessageType();
         // implement vector logic here
-        wheel1.data = std::abs(wheel_array_[0]);
-        wheel2.data = std::abs(wheel_array_[1]);
+        wheel1.data = MIN(MAX(wheel_array_[0], -MAX_SPEED_CST), MAX_SPEED_CST);
+        wheel2.data = MIN(MAX(wheel_array_[1], -MAX_SPEED_CST), MAX_SPEED_CST);
 #ifdef DEBUG
         // placeholder values
         RCLCPP_INFO(this->get_logger(), "debug mod wheels always have the same value");
@@ -100,10 +104,9 @@ private:
     void topic_callback(const std::shared_ptr<SubscriptionType> msg) const 
     {
         RCLCPP_INFO(this->get_logger(), "writing to pin '%d'", pwm_pin_);
-        uint16_t  pwmValue= std::floor(msg->data * 10);
+        uint16_t  pwmValue= std::abs(std::floor(msg->data * CONVERSION_CONSTANT));
         RCLCPP_INFO(this->get_logger(), "callback writing '%d'", pwmValue);
         pwmWrite(pwm_pin_, pwmValue);
-
     }
     static uint8_t id;
     std::shared_ptr<rclcpp::Subscription<SubscriptionType>> subscription_;

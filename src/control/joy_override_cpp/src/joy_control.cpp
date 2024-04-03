@@ -30,7 +30,6 @@ private:
     typedef example_interfaces::msg::Int8MultiArray publishType;
 
     void topic_callback(const IncommingMessage & joy_message) {
-        RCLCPP_INFO(this->get_logger(), "I heard: '%f'", joy_message.axes[0]);
         axes_array_[0] = joy_message.axes[0];
         axes_array_[1] = joy_message.axes[1];
     }
@@ -40,8 +39,8 @@ private:
         // the extent to which we should go forwards or backwards
         int baseLine = static_cast<int>(axes_array_[1] * MAX_SPEED);
         //setting the motor values
-        int left = baseLine + static_cast<int>(((MAX_SPEED - baseLine)/MAX_SPEED) * (axes_array_[0] * MAX_SPEED));
-        int right = baseLine + static_cast<int>(((MAX_SPEED - baseLine)/MAX_SPEED) * (-axes_array_[0] * MAX_SPEED));
+        int left = baseLine + static_cast<int>((std::abs((MAX_SPEED - baseLine)/MAX_SPEED)) * (axes_array_[0] * MAX_SPEED));
+        int right = baseLine + static_cast<int>(std::abs(((MAX_SPEED - baseLine)/MAX_SPEED)) * (-axes_array_[0] * MAX_SPEED));
         //capping motor speeds to 100%
         int8_t left_motor = static_cast<int8_t>(std::max(std::min(left, MAX_SPEED), -MAX_SPEED));
         int8_t right_motor = static_cast<int8_t>(std::max(std::min(right, MAX_SPEED), -MAX_SPEED));
