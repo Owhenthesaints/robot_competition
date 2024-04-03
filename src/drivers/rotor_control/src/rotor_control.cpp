@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <cmath>
 
 #define PWM_PIN_1 23
 #define PWM_PIN_2 26
@@ -55,9 +56,11 @@ private:
         auto wheel1 = MessageType();
         auto wheel2 = MessageType();
         // implement vector logic here
+        wheel1.data = std::abs(wheel_array_[0]);
+        wheel2.data = std::abs(wheel_array_[1]);
 #ifdef DEBUG
         // placeholder values
-        RCLCPP_DEBUG(this->get_logger(), "debug mod wheels always have the same value");
+        RCLCPP_INFO(this->get_logger(), "debug mod wheels always have the same value");
         wheel1.data = 25;
         wheel2.data = 25;
 #endif // ENDOF_DEBUG
@@ -67,6 +70,7 @@ private:
         publisher_2_-> publish(wheel2);
     }
     rclcpp::TimerBase::SharedPtr timer_;
+    // wheel_array_[1] up down, joystick_array_[2] left right
     int8_t * wheel_array_;
     //if the class is built with vector instructions only need 2 publishers one for the left wheel the other for the right
     std::shared_ptr<rclcpp::Publisher<MessageType>> publisher_1_;

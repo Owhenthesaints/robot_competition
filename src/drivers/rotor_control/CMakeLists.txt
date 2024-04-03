@@ -6,10 +6,11 @@ project(rotor_control)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(example_interfaces REQUIRED)
-set(DEBUG 1)
+set(DEBUG)
 set(VECTOR_INSTRUCTIONS 1)
 
-add_compile_definitions(DEBUG)
+# uncoment if you want to send the value of 25 on both wheels
+# add_compile_definitions(DEBUG=0)
 add_compile_definitions(VECTOR_INSTRUCTIONS)
 
 
