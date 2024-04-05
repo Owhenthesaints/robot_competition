@@ -16,7 +16,6 @@ add_compile_definitions(VECTOR_INSTRUCTIONS)
 
 add_executable(rotor_control src/rotor_control.cpp)
 ament_target_dependencies(rotor_control rclcpp example_interfaces)
-target_link_libraries(rotor_control wiringPi)
 
 install (TARGETS
          rotor_control
