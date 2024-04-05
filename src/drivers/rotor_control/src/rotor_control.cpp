@@ -7,10 +7,23 @@
 #include <memory>
 #include <cmath>
 
-#define PWM_PIN_1 23
-#define PWM_PIN_2 26
+// left
+#define PWM_PIN_LEFT 23
+// right
+#define PWM_PIN_RIGHT 26
+//left dir 
+#define WHEEL_DIR_LEFT 21
+//right dir
+#define WHEEL_DIR_RIGHT 22
+//left enable
+#define WHEEL_ENABLE_LEFT 15
+//right enable
+#define WHEEL_ENABLE_RIGHT 16
+// conversion constant to convert from 100 to 1024
 #define CONVERSION_CONSTANT 10.23
+// says we work in percentage (from axes 0-1 into percentage)
 #define MAX_SPEED_CST 100
+#define THRESHOLD 10
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -37,7 +50,7 @@ public:
     {
         // message of DEBUG severity
         RCLCPP_DEBUG(this-> get_logger(), "starting init MainControlRotor");
-        timer_ = this-> create_wall_timer(500ms, std::bind(&MainControlRotor::timer_callback, this));
+        timer_ = this-> create_wall_timer(50ms, std::bind(&MainControlRotor::timer_callback, this));
         wheel_array_ = new int8_t[num_children];
         //define two publishers for different topics
         RCLCPP_DEBUG(this-> get_logger(), "starting vector instruction implementation init");
@@ -91,12 +104,24 @@ template<typename SubscriptionType>
 class MotorController : public rclcpp::Node 
 {
 public:
-    MotorController(uint8_t pwm_choice) : Node("motor_node_"+std::to_string(id))
+    MotorController(uint8_t pwm_choice, uint8_t dir_choice, uint8_t enable_choice) : Node("motor_node_"+std::to_string(id)), dir_pin_(dir_choice), enable_pin_(enable_choice), pwm_pin_(pwm_choice)
     {
+        // wiringPi setup
+        if(wiringPiSetup()==-1)
+            exit(10);
+        pinMode(pwm_choice, PWM_OUTPUT);
+        pinMode(dir_choice, OUTPUT);
+        pinMode(enable_choice, OUTPUT); 
+        // initialising motors
         RCLCPP_DEBUG(this->get_logger(), "initialising Motor Controller '%d'", id);
         subscription_ = this-> create_subscription<SubscriptionType>("motor_updates/m" + std::to_string(id), 10, std::bind(&MotorController::topic_callback, this, _1)); 
         id++;
-        pwm_pin_ = pwm_choice;
+    }
+
+    ~MotorController() {
+        pinMode(pwm_pin_, INPUT);
+        pinMode(dir_pin_, INPUT);
+        pinMode(enable_pin_, INPUT);
     }
     
 
@@ -104,13 +129,32 @@ private:
     void topic_callback(const std::shared_ptr<SubscriptionType> msg) const 
     {
         RCLCPP_INFO(this->get_logger(), "writing to pin '%d'", pwm_pin_);
-        uint16_t  pwmValue= std::abs(std::floor(msg->data * CONVERSION_CONSTANT));
+        int8_t speed = msg->data;
+        uint16_t  pwmValue= std::abs(std::floor(speed * CONVERSION_CONSTANT));
+
+        // speed threshold
+        if (speed < THRESHOLD and speed > -THRESHOLD)
+        {
+            digitalWrite(enable_pin_, LOW);
+        }
+        //backwards forwards
+        else if(speed<0){
+            digitalWrite(dir_pin_, LOW);
+            digitalWrite(enable_pin_, HIGH);
+        }
+        else if(speed>0) {
+            digitalWrite(dir_pin_, HIGH);
+            digitalWrite(enable_pin_, HIGH);
+        }
+
         RCLCPP_INFO(this->get_logger(), "callback writing '%d'", pwmValue);
         pwmWrite(pwm_pin_, pwmValue);
     }
     static uint8_t id;
     std::shared_ptr<rclcpp::Subscription<SubscriptionType>> subscription_;
     uint8_t pwm_pin_;
+    uint8_t dir_pin_;
+    uint8_t enable_pin_;
 };
 
 template<typename SubscriptionType>
@@ -118,21 +162,15 @@ uint8_t MotorController<SubscriptionType>::id = 0;
 
 
 int main(int argc, char * argv[]){
-    if(wiringPiSetup()==-1)
-        exit(10);
-    pinMode(PWM_PIN_1, PWM_OUTPUT);
-    pinMode(PWM_PIN_2, PWM_OUTPUT);
     rclcpp::init(argc, argv);
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     auto control_node = std::make_shared<MainControlRotor<comType, arrivalType>>();
-    auto motor_node_0 = std::make_shared<MotorController<comType>>(PWM_PIN_1);
-    auto motor_node_1 = std::make_shared<MotorController<comType>>(PWM_PIN_2);
+    auto motor_node_0 = std::make_shared<MotorController<comType>>(PWM_PIN_LEFT, WHEEL_DIR_LEFT, WHEEL_ENABLE_LEFT);
+    auto motor_node_1 = std::make_shared<MotorController<comType>>(PWM_PIN_RIGHT, WHEEL_DIR_RIGHT, WHEEL_ENABLE_RIGHT);
     executor.add_node(control_node);
     executor.add_node(motor_node_0);
     executor.add_node(motor_node_1);
     executor.spin();
     rclcpp::shutdown();
-    pinMode(PWM_PIN_1, INPUT);
-    pinMode(PWM_PIN_2, INPUT);
     return 0;
 }
