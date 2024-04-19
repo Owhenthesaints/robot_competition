@@ -64,9 +64,10 @@ private:
         //
         std::string speed_left = std::string(1, static_cast<char>(MIN(MAX(wheel_array_[0], - MAX_SPEED_CST), MAX_SPEED_CST)));
         std::string speed_right = std::string(1, static_cast<char>(MIN(MAX(wheel_array_[1], - MAX_SPEED_CST), MAX_SPEED_CST)));
+        std::string stop_char = std::string(1, static_cast<char>(101));
         boost::asio::write(port_, boost::asio::buffer(speed_left));
         boost::asio::write(port_, boost::asio::buffer(speed_right));
-        boost::asio::write(port_, boost::asio::buffer(";"));
+        boost::asio::write(port_, boost::asio::buffer(stop_char));
     }
     rclcpp::TimerBase::SharedPtr timer_;
     // wheel_array_[1] up down, joystick_array_[2] left right

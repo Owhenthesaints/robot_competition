@@ -340,4 +340,4 @@ CATKIN_IGNORE
 
 
 install/
-*.code_workspace/
+*.code-workspace/
