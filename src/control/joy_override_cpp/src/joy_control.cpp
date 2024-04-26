@@ -34,19 +34,18 @@ private:
         axes_array_[1] = joy_message.axes[1];
     }
 
-    void timer_callback() {
+    void timer_callback()
+    {
         publishType message;
-        // the extent to which we should go forwards or backwards
-        int baseLine = static_cast<int>(axes_array_[1] * MAX_SPEED);
-        //setting the motor values
-        int left = baseLine + static_cast<int>((std::abs((MAX_SPEED - baseLine)/MAX_SPEED)) * (axes_array_[0] * MAX_SPEED));
-        int right = baseLine + static_cast<int>(std::abs(((MAX_SPEED - baseLine)/MAX_SPEED)) * (-axes_array_[0] * MAX_SPEED));
-        //capping motor speeds to 100%
+        // setting the motor values
+        int left = static_cast<int>((axes_array_[1] - axes_array_[0]) * MAX_SPEED);
+        int right = static_cast<int>((axes_array_[1] + axes_array_[0]) * MAX_SPEED);
+        // capping motor speeds to 100%
         int8_t left_motor = static_cast<int8_t>(std::max(std::min(left, MAX_SPEED), -MAX_SPEED));
         int8_t right_motor = static_cast<int8_t>(std::max(std::min(right, MAX_SPEED), -MAX_SPEED));
-        //publish
+        // publish
         message.data = {left_motor, right_motor};
-        publisher_ -> publish(message);
+        publisher_->publish(message);
     }
 
     std::shared_ptr<rclcpp::TimerBase> timer_;
