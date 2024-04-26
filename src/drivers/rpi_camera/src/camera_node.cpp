@@ -30,7 +30,10 @@ private:
     void timer_callback(){
         cv::Mat frame;
         cap>>frame;
-        msg_ = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
+        std_msgs::msg::Header header;
+        header.stamp = this->now();
+        header.frame_id = count_;
+        msg_ = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
         image_publisher_->publish(*msg_.get());
         RCLCPP_INFO(this->get_logger(), "Image %ld publisher", count_);
         count_++;
