@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/u_int8.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 #define PACKET_LENGTH 10
@@ -15,7 +15,7 @@
 #define NUM_IMU_VALS 4
 #define NUM_DIST_SENSORS 5
 
-constexpr const uint8_t const packetSize = NUM_DIST_SENSORS;
+constexpr const uint8_t packetSize = NUM_DIST_SENSORS;
 
 using namespace std::chrono_literals;
 
@@ -61,7 +61,8 @@ private:
 
         // if found try to imput the values into the class
         if (found) {
-            if (index < packetSize) {
+            if (index > packetSize) {
+                RCLCPP_INFO(this->get_logger(), "stop char found");
                 distributeValuesDistance(LibSerial::DataBuffer(
                         read_buffer.begin() + (int) index - packetSize,
                         read_buffer.begin() + (int) index));
@@ -89,12 +90,15 @@ private:
      * @brief this function takes in IMUValues and distributes them*/
     bool distributeValuesIMU(LibSerial::DataBuffer IMUValues) {
         uint8_t data[NUM_IMU_VALS * sizeof(IMUType)];
-        if (IMUValues.size() == NUM_IMU_VALS * sizeof(IMUType)) {
+        if (IMUValues.size() == packetSize) {
             std::copy(IMUValues.begin(), IMUValues.end(), data);
+        } else {
+            return false;
         }
         Converter converter;
         converter.bytes = data;
         std::copy(std::begin(converter.IMUVals), std::end(converter.IMUVals), IMUVal.begin());
+        return true;
     };
 
     union Converter {
@@ -115,7 +119,7 @@ private:
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::String, float>>();
+    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::UInt8, float>>();
     rclcpp::spin(rx_node);
     rclcpp::shutdown();
     return 0;
