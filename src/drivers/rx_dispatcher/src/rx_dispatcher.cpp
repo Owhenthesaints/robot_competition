@@ -8,10 +8,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int8.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/imu.hpp"
 
 #define PACKET_LENGTH 10
-#define STOP_CHAR 201
+#define STOP_CHAR 101
 #define NUM_IMU_VALS 4
 #define NUM_DIST_SENSORS 5
 
@@ -23,7 +24,7 @@ using namespace std::chrono_literals;
 template<typename DistSensorPub, typename IMUPub, typename IMUType>
 class RxDispatcher : public rclcpp::Node {
 public:
-    explicit RxDispatcher(const std::string &port = "tty/ACM0", const int &baudRate = 9600,
+    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 9600,
                           const size_t &ms_timeout = 10) : Node("rx_dispatcher"),
                                                            stored_values(new uint8_t[PACKET_LENGTH - 1]),
                                                            serial(),
@@ -33,9 +34,12 @@ public:
             serial.Open(port);
         } catch (const LibSerial::OpenFailed &) {
             RCLCPP_INFO(this->get_logger(), "failed to open specified file");
+            throw;
         }
+        if (baudRate==9600)
+            serial.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
         // opening publishers
-        dist_publisher_ = this->create_publisher<DistSensorPub>("rx/imu/value", 10);
+        dist_publisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
         imu_publisher_ = this->create_publisher<IMUPub>("rx/imu/value", 10);
         // create timer
         timer_ = this->create_wall_timer(25ms, std::bind(&RxDispatcher::timer_callback, this));
@@ -68,8 +72,6 @@ private:
                         read_buffer.begin() + (int) index));
             }
         }
-
-
     }
 
     /**
@@ -114,12 +116,12 @@ private:
     LibSerial::SerialPort serial;
     const size_t ms_timeout;
     std::array<IMUType, NUM_IMU_VALS> IMUVal;
-    std::array<uint8_t, NUM_DIST_SENSORS> distSensorArray;
+    std::array<uint8_t, NUM_DIST_SENSORS> distSensorArray{};
 };
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::UInt8, float>>();
+    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::UInt8 , float>>();
     rclcpp::spin(rx_node);
     rclcpp::shutdown();
     return 0;
