@@ -4,14 +4,18 @@
 #include <string>
 #include <libserial/SerialPort.h>
 #include <vector>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 
 #define PACKET_LENGTH 10
 #define STOP_CHAR 201
 #define NUM_IMU_VALS 4
 #define NUM_DIST_SENSORS 5
+
+constexpr const uint8_t const packetSize = NUM_DIST_SENSORS;
 
 using namespace std::chrono_literals;
 
@@ -19,14 +23,15 @@ using namespace std::chrono_literals;
 template<typename DistSensorPub, typename IMUPub, typename IMUType>
 class RxDispatcher : public rclcpp::Node {
 public:
-    explicit RxDispatcher(const std::string &port = "tty/ACM0", const int & baudRate = 9600, const size_t & ms_timeout = 10) : Node("rx_dispatcher"),
-                                                                                       stored_values(new uint8_t[PACKET_LENGTH-1]),
-                                                                                       serial(),
-                                                                                       ms_timeout(ms_timeout){
+    explicit RxDispatcher(const std::string &port = "tty/ACM0", const int &baudRate = 9600,
+                          const size_t &ms_timeout = 10) : Node("rx_dispatcher"),
+                                                           stored_values(new uint8_t[PACKET_LENGTH - 1]),
+                                                           serial(),
+                                                           ms_timeout(ms_timeout) {
         // opening serial
         try {
             serial.Open(port);
-        } catch(const LibSerial::OpenFailed&){
+        } catch (const LibSerial::OpenFailed &) {
             RCLCPP_INFO(this->get_logger(), "failed to open specified file");
         }
         // opening publishers
@@ -42,13 +47,12 @@ private:
         LibSerial::DataBuffer read_buffer;
         bool found = false;
         size_t index = 0;
-        try
-        {
+        try {
             serial.Read(read_buffer, 0, ms_timeout);
-        }catch (const LibSerial::ReadTimeout &){
+        } catch (const LibSerial::ReadTimeout &) {
             auto it = read_buffer.begin();
             // find last iterator pointing to stop_char
-            while((it = std::find_if(it, [](int val){return val == STOP_CHAR;}))!= read_buffer.end()){
+            while ((it = std::find_if(it, read_buffer.end(), [](int val) { return val == STOP_CHAR; })) != read_buffer.end()) {
                 found = true;
                 index = std::distance(read_buffer.begin(), it);
                 it++;
@@ -57,9 +61,10 @@ private:
 
         // if found try to imput the values into the class
         if (found) {
-            if(index < NUM_IMU_VALS * sizeof(IMUType) - NUM_DIST_SENSORS) {
-               distributeValuesDistance(LibSerial::DataBuffer(read_buffer.begin() + (int)index - NUM_DIST_SENSORS - NUM_IMU_VALS * sizeof(IMUType), read_buffer.begin()+(int)index));
-
+            if (index < packetSize) {
+                distributeValuesDistance(LibSerial::DataBuffer(
+                        read_buffer.begin() + (int) index - packetSize,
+                        read_buffer.begin() + (int) index));
             }
         }
 
@@ -71,8 +76,8 @@ private:
      * @param distanceValues a subvector containing the distance values
      * @return true if successful can add more checks
      */
-    bool distributeValuesDistance(LibSerial::DataBuffer distanceValues){
-        if (distanceValues.size() == NUM_DIST_SENSORS){
+    bool distributeValuesDistance(LibSerial::DataBuffer distanceValues) {
+        if (distanceValues.size() == NUM_DIST_SENSORS) {
             std::copy(distanceValues.begin(), distanceValues.begin() + distSensorArray.size(), distSensorArray.begin());
             return true;
         }
@@ -83,17 +88,17 @@ private:
     /**
      * @brief this function takes in IMUValues and distributes them*/
     bool distributeValuesIMU(LibSerial::DataBuffer IMUValues) {
-        uint8_t data[NUM_IMU_VALS* sizeof(IMUType)];
-        if(IMUValues.size() == NUM_IMU_VALS * sizeof(IMUType)){
+        uint8_t data[NUM_IMU_VALS * sizeof(IMUType)];
+        if (IMUValues.size() == NUM_IMU_VALS * sizeof(IMUType)) {
             std::copy(IMUValues.begin(), IMUValues.end(), data);
         }
         Converter converter;
-        converter.bytes=data;
+        converter.bytes = data;
         std::copy(std::begin(converter.IMUVals), std::end(converter.IMUVals), IMUVal.begin());
     };
 
-    union Converter{
-        uint8_t bytes[NUM_IMU_VALS*sizeof(IMUType)];
+    union Converter {
+        uint8_t bytes[NUM_IMU_VALS * sizeof(IMUType)];
         float IMUVals[NUM_IMU_VALS];
     };
 
@@ -108,6 +113,10 @@ private:
     std::array<uint8_t, NUM_DIST_SENSORS> distSensorArray;
 };
 
-int main() {
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::String, float>>();
+    rclcpp::spin(rx_node);
+    rclcpp::shutdown();
     return 0;
 }
