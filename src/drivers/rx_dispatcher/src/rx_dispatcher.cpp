@@ -10,6 +10,7 @@
 #include "std_msgs/msg/u_int8.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+#include "std_msgs/msg/u_int8_multi_array.hpp"
 
 #define PACKET_LENGTH 10
 #define STOP_CHAR 101
@@ -36,17 +37,28 @@ public:
             RCLCPP_INFO(this->get_logger(), "failed to open specified file");
             throw;
         }
-        if (baudRate==9600)
+        if (baudRate == 9600) {
             serial.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+        }
         // opening publishers
-        dist_publisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
-        imu_publisher_ = this->create_publisher<IMUPub>("rx/imu/value", 10);
+        distPublisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
+        imuPublisher_ = this->create_publisher<IMUPub>("rx/imu/value", 10);
         // create timer
         timer_ = this->create_wall_timer(25ms, std::bind(&RxDispatcher::timer_callback, this));
     }
 
 private:
     void timer_callback() {
+        if (attribute_values()) {
+            publishDistSensors();
+        }
+    }
+
+    /**
+     * @brief a function that handles the reading from serial and attributes the values
+     */
+    bool attribute_values() {
+
         // this is an std::vector
         LibSerial::DataBuffer read_buffer;
         bool found = false;
@@ -56,7 +68,8 @@ private:
         } catch (const LibSerial::ReadTimeout &) {
             auto it = read_buffer.begin();
             // find last iterator pointing to stop_char
-            while ((it = std::find_if(it, read_buffer.end(), [](int val) { return val == STOP_CHAR; })) != read_buffer.end()) {
+            while ((it = std::find_if(it, read_buffer.end(), [](int val) { return val == STOP_CHAR; })) !=
+                   read_buffer.end()) {
                 found = true;
                 index = std::distance(read_buffer.begin(), it);
                 it++;
@@ -66,12 +79,13 @@ private:
         // if found try to imput the values into the class
         if (found) {
             if (index > packetSize) {
-                RCLCPP_INFO(this->get_logger(), "stop char found");
                 distributeValuesDistance(LibSerial::DataBuffer(
                         read_buffer.begin() + (int) index - packetSize,
                         read_buffer.begin() + (int) index));
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -108,10 +122,18 @@ private:
         float IMUVals[NUM_IMU_VALS];
     };
 
+    void publishDistSensors() {
+        DistSensorPub msg;
+        for (size_t i = 0; i < distSensorArray.size(); i++) {
+            msg.data.push_back(distSensorArray[i]);
+        }
+        distPublisher_->publish(msg);
+    };
+
 
     rclcpp::TimerBase::SharedPtr timer_;
-    std::shared_ptr<rclcpp::Publisher<DistSensorPub>> dist_publisher_;
-    std::shared_ptr<rclcpp::Publisher<IMUPub>> imu_publisher_;
+    std::shared_ptr<rclcpp::Publisher<DistSensorPub>> distPublisher_;
+    std::shared_ptr<rclcpp::Publisher<IMUPub>> imuPublisher_;
     std::unique_ptr<uint8_t[]> stored_values;
     LibSerial::SerialPort serial;
     const size_t ms_timeout;
@@ -121,7 +143,7 @@ private:
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto rx_node = std::make_shared<RxDispatcher<sensor_msgs::msg::Imu, std_msgs::msg::UInt8 , float>>();
+    auto rx_node = std::make_shared<RxDispatcher<std_msgs::msg::UInt8MultiArray, sensor_msgs::msg::Imu, float>>();
     rclcpp::spin(rx_node);
     rclcpp::shutdown();
     return 0;
