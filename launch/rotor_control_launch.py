@@ -8,9 +8,14 @@ def generate_launch_description():
             executable='rotor_control',
             namespace="",
             name = 'rotor_control',
-            prefix = ["sudo -E env \"PYTHONPATH=$PYTHONPATH\" \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH\" \"PATH=$PATH\" \"USER=$USER\" bash -c "],
             shell =True,
         ),
+        Node(
+            package='joy_override_cpp',
+            executable='control_override',
+            namespace="",
+            name='control_override_joy'
+        )
     ])
 
 
