@@ -16,6 +16,7 @@
 #define STOP_CHAR 101
 #define NUM_IMU_VALS 4
 #define NUM_DIST_SENSORS 5
+#define CALLBACK_TIME 50ms // ms
 
 constexpr const uint8_t packetSize = NUM_DIST_SENSORS;
 
@@ -44,7 +45,7 @@ public:
         distPublisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
         imuPublisher_ = this->create_publisher<IMUPub>("rx/imu/value", 10);
         // create timer
-        timer_ = this->create_wall_timer(25ms, std::bind(&RxDispatcher::timer_callback, this));
+        timer_ = this->create_wall_timer(CALLBACK_TIME, std::bind(&RxDispatcher::timer_callback, this));
     }
 
 private:
