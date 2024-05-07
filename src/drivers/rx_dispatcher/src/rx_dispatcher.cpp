@@ -25,8 +25,8 @@ using namespace std::chrono_literals;
 template<typename DistSensorPub, typename IMUPub, typename IMUType>
 class RxDispatcher : public rclcpp::Node {
 public:
-    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 9600,
-                          const size_t &ms_timeout = 10) : Node("rx_dispatcher"),
+    explicit RxDispatcher(const std::string &port = "/dev/ttyACM1", const int &baudRate = 9600,
+                          const size_t &ms_timeout = 40) : Node("rx_dispatcher"),
                                                            stored_values(new uint8_t[PACKET_LENGTH - 1]),
                                                            serial(),
                                                            ms_timeout(ms_timeout) {
@@ -78,7 +78,9 @@ private:
 
         // if found try to imput the values into the class
         if (found) {
-            if (index > packetSize) {
+            RCLCPP_INFO(this->get_logger(), "distributing values found, packetSize and Index '%s', '%u', '%lu'", found? "true": "false", packetSize, index);
+            if (index >= packetSize) {
+                RCLCPP_INFO(this->get_logger(), "distributing values");
                 distributeValuesDistance(LibSerial::DataBuffer(
                         read_buffer.begin() + (int) index - packetSize,
                         read_buffer.begin() + (int) index));
