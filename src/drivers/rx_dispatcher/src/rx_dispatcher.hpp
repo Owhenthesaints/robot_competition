@@ -58,6 +58,7 @@ private:
         msg += motorArray_[0];
         msg += motorArray_[1];
         msg += char(STOP_CHAR);
+        serial.FlushIOBuffers();
         serial.Write(msg);
     }
 
@@ -74,11 +75,11 @@ private:
             serial.Read(read_buffer, 0, ms_timeout);
         } catch (const LibSerial::ReadTimeout &) {
             auto it = read_buffer.begin();
-            RCLCPP_INFO(this->get_logger(), "What is buffer size'%lu'", read_buffer.size());
+            RCLCPP_DEBUG(this->get_logger(), "What is buffer size'%lu'", read_buffer.size());
             // find last iterator pointing to stop_char
             while ((it = std::find_if(it, read_buffer.end(), [](int val) { return val == STOP_CHAR; })) !=
                    read_buffer.end()) {
-                RCLCPP_INFO(this->get_logger(), "trying to find");
+                RCLCPP_DEBUG(this->get_logger(), "trying to find");
                 found = true;
                 index = std::distance(read_buffer.begin(), it);
                 it++;
@@ -90,7 +91,7 @@ private:
             RCLCPP_INFO(this->get_logger(), "distributing values found, packetSize and Index '%s', '%u', '%lu'",
                         found ? "true" : "false", packetSize, index);
             if (index >= packetSize) {
-                RCLCPP_INFO(this->get_logger(), "distributing values");
+                RCLCPP_DEBUG(this->get_logger(), "distributing values");
                 distributeValuesDistance(LibSerial::DataBuffer(
                         read_buffer.begin() + (int) index - packetSize,
                         read_buffer.begin() + (int) index));
