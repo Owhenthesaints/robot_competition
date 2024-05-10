@@ -5,7 +5,6 @@
 
 #define PACKET_LENGTH 10
 #define STOP_CHAR 101
-#define NUM_IMU_VALS 4
 #define NUM_DIST_SENSORS 5
 #define CALLBACK_TIME 50ms // ms
 
@@ -25,7 +24,7 @@ public:
         try {
             serial.Open(port);
         } catch (const LibSerial::OpenFailed &) {
-            RCLCPP_INFO(this->get_logger(), "failed to open specified file");
+            RCLCPP_ERROR(this->get_logger(), "failed to open specified port");
             throw;
         }
         if (baudRate == 9600) {
@@ -45,7 +44,7 @@ private:
         if (attribute_values()) {
             publishDistSensors();
         }
-        send_rotor_msgs();
+        send_motor_msgs();
     }
 
     void rotor_values_updates(const RotorControlSub & msg){
@@ -54,12 +53,11 @@ private:
         motorArray_[1] = msg.data[1];
     }
 
-    void send_rotor_msgs(){
-        serial.FlushIOBuffers();
+    void send_motor_msgs(){
         std::string msg;
         msg += motorArray_[0];
         msg += motorArray_[1];
-        msg += STOP_CHAR;
+        msg += char(STOP_CHAR);
         serial.Write(msg);
     }
 
@@ -76,9 +74,11 @@ private:
             serial.Read(read_buffer, 0, ms_timeout);
         } catch (const LibSerial::ReadTimeout &) {
             auto it = read_buffer.begin();
+            RCLCPP_INFO(this->get_logger(), "What is buffer size'%lu'", read_buffer.size());
             // find last iterator pointing to stop_char
             while ((it = std::find_if(it, read_buffer.end(), [](int val) { return val == STOP_CHAR; })) !=
                    read_buffer.end()) {
+                RCLCPP_INFO(this->get_logger(), "trying to find");
                 found = true;
                 index = std::distance(read_buffer.begin(), it);
                 it++;
@@ -116,8 +116,8 @@ private:
 
     void publishDistSensors() {
         DistSensorPub msg;
-        for (size_t i = 0; i < distSensorArray.size(); i++) {
-            msg.data.push_back(distSensorArray[i]);
+        for (unsigned char & i : distSensorArray) {
+            msg.data.push_back(i);
         }
         distPublisher_->publish(msg);
     };

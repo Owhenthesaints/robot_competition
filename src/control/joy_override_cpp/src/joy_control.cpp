@@ -22,7 +22,7 @@ public:
         axes_array_[0] = 0;
         axes_array_[1] = 1;
         publisher_ = this->create_publisher<publishType>("motor_updates/direction", 10);
-        timer_ = this -> create_wall_timer( 50ms, std::bind(&JoyConverter::timer_callback, this));
+        timer_ = this -> create_wall_timer( 75ms, std::bind(&JoyConverter::timer_callback, this));
         subscription_ = this->create_subscription<IncommingMessage>("joy", 10, std::bind(&JoyConverter::topic_callback, this, _1));
     }
 
