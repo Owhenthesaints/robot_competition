@@ -8,7 +8,7 @@ def open_terminal_and_close():
     command = 'timeout 4s pio device monitor;exit;'
     
     # Open gnome-terminal and run the command
-    subprocess.Popen(['gnome-terminal', '--', 'bash', '-c', command])
+    subprocess.Popen(command, shell=True)
 
 
 
