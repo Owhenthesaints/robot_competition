@@ -15,8 +15,8 @@ using namespace std::chrono_literals;
 template<typename DistSensorPub, typename RotorControlSub>
 class RxDispatcher : public rclcpp::Node {
 public:
-    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 9600,
-                          const size_t &ms_timeout = 40) : Node("rx_dispatcher"),
+    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 19200,
+                          const size_t &ms_timeout = 100) : Node("rx_dispatcher"),
                                                            stored_values(new uint8_t[PACKET_LENGTH - 1]),
                                                            serial(),
                                                            ms_timeout(ms_timeout) {
@@ -29,6 +29,8 @@ public:
         }
         if (baudRate == 9600) {
             serial.SetBaudRate(LibSerial::BaudRate::BAUD_9600);
+        } else if (baudRate == 19200) {
+            serial.SetBaudRate(LibSerial::BaudRate::BAUD_19200);
         }
         // opening publishers
         distPublisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
@@ -88,8 +90,8 @@ private:
 
         // if found try to imput the values into the class
         if (found) {
-            RCLCPP_INFO(this->get_logger(), "distributing values found, packetSize and Index '%s', '%u', '%lu'",
-                        found ? "true" : "false", packetSize, index);
+            RCLCPP_INFO(this->get_logger(), "distributing values found, read_buffer size and Index '%s', '%u', '%lu'",
+                        found ? "true" : "false", read_buffer.size(), index);
             if (index >= packetSize) {
                 RCLCPP_DEBUG(this->get_logger(), "distributing values");
                 distributeValuesDistance(LibSerial::DataBuffer(
