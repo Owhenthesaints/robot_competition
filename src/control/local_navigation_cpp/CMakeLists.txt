@@ -11,8 +11,11 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-add_executable(local_navigation_server src/local_navigation_server.cpp)
-ament_target_dependencies(local_navigation_server rclcpp std_msgs example_interfaces)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(local_navigation_cpp REQUIRED)
+add_executable(local_navigation_server src/local_navigation_server.cpp src/LocalNavigationServer.cpp)
+ament_target_dependencies(local_navigation_server rclcpp std_msgs example_interfaces rclcpp_action rclcpp_components local_navigation_cpp)
 
 
 rosidl_generate_interfaces(${PROJECT_NAME}
