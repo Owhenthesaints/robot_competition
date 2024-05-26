@@ -15,9 +15,9 @@ using namespace std::chrono_literals;
 template<typename DistSensorPub, typename RotorControlSub>
 class RxDispatcher : public rclcpp::Node {
 public:
-    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 19200,
-                          const size_t &ms_timeout = 100) : Node("rx_dispatcher"),
-                                                           stored_values(new uint8_t[PACKET_LENGTH - 1]),
+    explicit RxDispatcher(const std::string &port = "/dev/ttyACM0", const int &baudRate = 9600,
+                          const size_t &ms_timeout = 20) : Node("rx_dispatcher"),
+                                                           stored_values(new uint8_t[packetSize - 1]),
                                                            serial(),
                                                            ms_timeout(ms_timeout) {
         // opening serial
