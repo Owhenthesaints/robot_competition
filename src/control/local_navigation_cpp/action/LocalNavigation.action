@@ -1,8 +1,0 @@
-# Request
-bool local_nav
----
-# Result
-bool fixed
----
-# Feedback
-uint8[] active_sensors
