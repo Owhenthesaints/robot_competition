@@ -2,11 +2,22 @@
 #define RX_DISPATCHER_HPP
 
 #include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <algorithm>
+#include <numbers>
+#include <vector>
 
 #define PACKET_LENGTH 10
 #define STOP_CHAR 101
 #define NUM_DIST_SENSORS 5
-#define CALLBACK_TIME 50ms // ms
+#define CALLBACK_TIME 50ms    // ms
+#define ROBOT_WIDTH 0.357     // m
+#define ROBOT_WIDTH_2 0.34    // m
+#define DIAMETER_WHEEL 0.1142 // m
+#define PERCENTAGE_TO_RPM 2060
+// 
+#define PI 3.14159265358979323846
+constexpr double WHEEL_SPEED_CONVERSION_TO_RAD = PERCENTAGE_TO_RPM / 60 * 2 * PI;
 
 constexpr const uint8_t packetSize = NUM_DIST_SENSORS;
 using namespace std::chrono_literals;
@@ -34,6 +45,7 @@ public:
         }
         // opening publishers
         distPublisher_ = this->create_publisher<DistSensorPub>("rx/distance/value", 10);
+        speedPublisher_ = this-> create_publisher<speedPublisherType>("robot/speed/value", 10);
         rotorSubscription_ = this->create_subscription<RotorControlSub>(
                 "motor_updates/direction", 10,
                 std::bind(&RxDispatcher::rotor_values_updates, this, std::placeholders::_1));
@@ -42,11 +54,12 @@ public:
     }
 
 private:
+    using speedPublisherType = geometry_msgs::msg::TwistWithCovarianceStamped;
     void timer_callback() {
         if (attribute_values()) {
             publishDistSensors();
         }
-        send_motor_msgs();
+        sendMotorMsgs();
     }
 
     void rotor_values_updates(const RotorControlSub & msg){
@@ -55,7 +68,7 @@ private:
         motorArray_[1] = msg.data[1];
     }
 
-    void send_motor_msgs(){
+    void sendMotorMsgs(){
         std::string msg;
         msg += motorArray_[0];
         msg += motorArray_[1];
@@ -90,7 +103,7 @@ private:
 
         // if found try to imput the values into the class
         if (found) {
-            RCLCPP_INFO(this->get_logger(), "distributing values found, read_buffer size and Index '%s', '%u', '%lu'",
+            RCLCPP_INFO(this->get_logger(), "distributing values found, read_buffer size and Index '%s', '%lu', '%lu'",
                         found ? "true" : "false", read_buffer.size(), index);
             if (index >= packetSize) {
                 RCLCPP_DEBUG(this->get_logger(), "distributing values");
@@ -116,6 +129,31 @@ private:
         return false;
     }
 
+    /**
+     * @brief update the speeds for the kallman node
+    */
+    void updateSpeed(){
+        auto msg = speedPublisherType();
+        msg.header.stamp = this->get_clock->now();
+        msg.header.frame_id = "base_link";
+        uint8_t difference = motorArray_[0] - motorArray_[1];
+        msg.twist.twist.angular.z = difference * ROBOT_WIDTH;
+        msg.twist.twist.linear.x = DIAMETER_WHEEL/2 * std::min(motorArray_[0], motorArray_[1]) * WHEEL_SPEED_CONVERSION_TO_RAD; // get the speed of the motor
+        msg.twist.twist.linear.y = 0;
+        msg.twist.twist.linear.z = 0;
+        
+        
+    }
+
+    /**
+     * @brief the function helps streemline the callback calls sendMotorMsgs and updateSpeed
+    */
+    void updateSpeedAndSendMessages() {
+        this-> sendMotorMsgs();
+        this-> updateSpeed();
+    }
+
+
 
     void publishDistSensors() {
         DistSensorPub msg;
@@ -129,6 +167,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     std::shared_ptr<rclcpp::Publisher<DistSensorPub>> distPublisher_;
     std::shared_ptr<rclcpp::Subscription<RotorControlSub>> rotorSubscription_;
+    std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>> speedPublisher_;
     std::unique_ptr<uint8_t[]> stored_values;
     LibSerial::SerialPort serial;
     const size_t ms_timeout;

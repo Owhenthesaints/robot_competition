@@ -11,10 +11,11 @@ find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(PkgConfig)
 pkg_check_modules(SERIAL libserial)
 add_executable(rx_dispatcher src/rx_dispatcher.cpp)
-ament_target_dependencies(rx_dispatcher rclcpp std_msgs sensor_msgs example_interfaces)
+ament_target_dependencies(rx_dispatcher rclcpp std_msgs sensor_msgs example_interfaces geometry_msgs)
 target_link_libraries(rx_dispatcher ${SERIAL_LIBRARIES} ${CMAKE_THREADS_LIBS_INIT})
 
 
