@@ -131,18 +131,26 @@ private:
 
     /**
      * @brief update the speeds for the kallman node
-    */
-    void updateSpeed(){
+     */
+    void updateSpeed()
+    {
         auto msg = speedPublisherType();
         msg.header.stamp = this->get_clock->now();
         msg.header.frame_id = "base_link";
-        uint8_t difference = motorArray_[0] - motorArray_[1];
-        msg.twist.twist.angular.z = difference * ROBOT_WIDTH;
-        msg.twist.twist.linear.x = DIAMETER_WHEEL/2 * std::min(motorArray_[0], motorArray_[1]) * WHEEL_SPEED_CONVERSION_TO_RAD; // get the speed of the motor
+        uint8_t difference = motorArray_[1] - motorArray_[0];
+        msg.twist.twist.angular.z = difference * ROBOT_WIDTH * DIAMETER_WHEEL / 2;
+        msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * std::min(motorArray_[0], motorArray_[1]) * WHEEL_SPEED_CONVERSION_TO_RAD; // get the speed of the motor
         msg.twist.twist.linear.y = 0;
         msg.twist.twist.linear.z = 0;
-        
-        
+        msg.twist.covariance = std::vector<double>({
+            0.0025, 0, 0, 0, 0, 0, // Variance in x (0.05^2)
+            0, 0.0025, 0, 0, 0, 0, // Variance in y (0.05^2)
+            0, 0, 0.0001, 0, 0, 0, // Variance in z (0.01^2)
+            0, 0, 0, 0.0001, 0, 0, // Variance in roll (0.01^2)
+            0, 0, 0, 0, 0.0001, 0, // Variance in pitch (0.01^2)
+            0, 0, 0, 0, 0, 0.0004  // Variance in yaw (0.02^2)
+        });
+        speedPublisher_->publish(msg);
     }
 
     /**
