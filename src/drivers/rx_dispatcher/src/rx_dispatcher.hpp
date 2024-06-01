@@ -14,10 +14,11 @@
 #define ROBOT_WIDTH 0.357     // m
 #define ROBOT_WIDTH_2 0.34    // m
 #define DIAMETER_WHEEL 0.1142 // m
-#define PERCENTAGE_TO_RPM 2060
-// 
+#define ONEHUNDRED_TO_RPM 2060
+#define REDUCTION_RATIO 60
+//
 #define PI 3.14159265358979323846
-constexpr double WHEEL_SPEED_CONVERSION_TO_RAD = PERCENTAGE_TO_RPM / 60 * 2 * PI;
+constexpr double WHEEL_SPEED_CONVERSION_TO_RAD = ONEHUNDRED_TO_RPM / (double)100 / (double)60 * 2 * PI / (double)REDUCTION_RATIO;
 
 constexpr const uint8_t packetSize = NUM_DIST_SENSORS;
 using namespace std::chrono_literals;
@@ -59,7 +60,7 @@ private:
         if (attribute_values()) {
             publishDistSensors();
         }
-        sendMotorMsgs();
+        updateSpeedAndSendMessages();
     }
 
     void rotor_values_updates(const RotorControlSub & msg){
@@ -135,14 +136,14 @@ private:
     void updateSpeed()
     {
         auto msg = speedPublisherType();
-        msg.header.stamp = this->get_clock->now();
+        msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "base_link";
-        uint8_t difference = motorArray_[1] - motorArray_[0];
-        msg.twist.twist.angular.z = difference * ROBOT_WIDTH * DIAMETER_WHEEL / 2;
-        msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * std::min(motorArray_[0], motorArray_[1]) * WHEEL_SPEED_CONVERSION_TO_RAD; // get the speed of the motor
+        int16_t difference = motorArray_[1] - motorArray_[0];
+        msg.twist.twist.angular.z = difference * DIAMETER_WHEEL/2 * WHEEL_SPEED_CONVERSION_TO_RAD /(ROBOT_WIDTH/2);
+        msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD * ((motorArray_[0] + motorArray_[1]) / (double)2); // get the speed of the motor
         msg.twist.twist.linear.y = 0;
         msg.twist.twist.linear.z = 0;
-        msg.twist.covariance = std::vector<double>({
+        msg.twist.covariance = std::array<double, 36>({
             0.0025, 0, 0, 0, 0, 0, // Variance in x (0.05^2)
             0, 0.0025, 0, 0, 0, 0, // Variance in y (0.05^2)
             0, 0, 0.0001, 0, 0, 0, // Variance in z (0.01^2)
