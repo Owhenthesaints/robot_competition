@@ -26,6 +26,8 @@ class LegoDetector(Node):
     
     def __init__(self, model_name, graph_name, labelmap_name, timer_period = 0.01, use_TPU = False):
         super().__init__("lego_detector")
+        self.timer_period = timer_period
+        self.timer = self.create_timer(timer_period, self.analyse_vision)
         self.video_capture = cv2.VideoCapture(0)
 
         ### Vision
@@ -97,75 +99,70 @@ class LegoDetector(Node):
         ret, frame = self.video_capture.read()
         if ret:
             cv2.imshow("Beautiful Feed", frame)
-        
-
             
     
 
     def analyse_vision(self):
-        while True:
-            t1 = cv2.getTickCount()
+        t1 = cv2.getTickCount()
 
-            # get frame
-            hasFrame, frame1 = self.video_capture.read()
+        # get frame
+        hasFrame, frame1 = self.video_capture.read()
 
-            # Acquire frame and resize to input shape expected by model [1xHxWx3]
-            frame = frame1.copy()
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_resized = cv2.resize(frame_rgb, (self.__width, self.__height))
-            input_data = np.expand_dims(frame_resized, axis=0)
+        # Acquire frame and resize to input shape expected by model [1xHxWx3]
+        frame = frame1.copy()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_resized = cv2.resize(frame_rgb, (self.__width, self.__height))
+        input_data = np.expand_dims(frame_resized, axis=0)
 
-            # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-            if self.__floating_model:
-                input_data = (np.float32(input_data) - self.__input_mean) / self.__input_std
+        # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+        if self.__floating_model:
+            input_data = (np.float32(input_data) - self.__input_mean) / self.__input_std
 
-            # Perform detection by running the model with the image as input
-            self.interpreter.set_tensor(self.__input_details[0]['index'],input_data)
-            self.interpreter.invoke()
+        # Perform detection by running the model with the image as input
+        self.interpreter.set_tensor(self.__input_details[0]['index'],input_data)
+        self.interpreter.invoke()
 
-            # Retrieve detection results
-            boxes = self.interpreter.get_tensor(self.__output_details[self.__boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-            classes = self.interpreter.get_tensor(self.__output_details[self.__classes_idx]['index'])[0] # Class index of detected objects
-            scores = self.interpreter.get_tensor(self.__output_details[self.__scores_idx]['index'])[0] # Confidence of detected objects
+        # Retrieve detection results
+        boxes = self.interpreter.get_tensor(self.__output_details[self.__boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
+        classes = self.interpreter.get_tensor(self.__output_details[self.__classes_idx]['index'])[0] # Class index of detected objects
+        scores = self.interpreter.get_tensor(self.__output_details[self.__scores_idx]['index'])[0] # Confidence of detected objects
 
-            # Loop over all detections and process each detection if its confidence is above minimum threshold
-            for i in range(len(scores)):
-                if ((scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0)):
+        # Loop over all detections and process each detection if its confidence is above minimum threshold
+        for i in range(len(scores)):
+            if ((scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0)):
 
-                    # Get bounding box coordinates
-                    # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-                    ymin = int(max(1,(boxes[i][0] * self.__imH)))
-                    xmin = int(max(1,(boxes[i][1] * self.__imW)))
-                    ymax = int(min(self.__imH,(boxes[i][2] * self.__imH)))
-                    xmax = int(min(self.__imW,(boxes[i][3] * self.__imW)))
+                # Get bounding box coordinates
+                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+                ymin = int(max(1,(boxes[i][0] * self.__imH)))
+                xmin = int(max(1,(boxes[i][1] * self.__imW)))
+                ymax = int(min(self.__imH,(boxes[i][2] * self.__imH)))
+                xmax = int(min(self.__imW,(boxes[i][3] * self.__imW)))
 
-                    # Draw bounding box
-                    cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+                # Draw bounding box
+                cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
 
-                    # Get object's name and draw label
-                    object_name = self.labels[int(classes[i])] # Look up object name from "labels" array using class index
-                    label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'quarter: 72%'
-                    labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-                    label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-                    cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-                    cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+                # Get object's name and draw label
+                object_name = self.labels[int(classes[i])] # Look up object name from "labels" array using class index
+                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'quarter: 72%'
+                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
 
 
-            # Draw framerate in corner of frame
-            cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(0,0,0),4,cv2.LINE_AA)
-            cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(230,230,230),2,cv2.LINE_AA)
+        # Draw framerate in corner of frame
+        cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(0,0,0),4,cv2.LINE_AA)
+        cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(230,230,230),2,cv2.LINE_AA)
 
-            # All the results have been drawn on the frame, so it's time to display it.
-            cv2.imshow('Object detector', frame)
+        # All the results have been drawn on the frame, so it's time to display it.
+        cv2.imshow('Object detector', frame)
+        cv2.waitKey(1)
 
-            # Calculate framerate
-            t2 = cv2.getTickCount()
-            time1 = (t2-t1)/self.frequency
-            self.frame_rate_calc= 1/time1
+        # Calculate framerate
+        t2 = cv2.getTickCount()
+        time1 = (t2-t1)/self.frequency
+        self.frame_rate_calc= 1/time1
 
-            if cv2.waitKey(1) == ord('q'):
-                break
-        cv2.destroyAllWindows()
 
     def __del__(self):
         self.release_cap()
@@ -180,7 +177,7 @@ def main(args = None):
     LABELMAP_NAME = 'labelmap.txt'
     detector = LegoDetector(MODEL_NAME, GRAPH_NAME, LABELMAP_NAME)
     try:
-        detector.analyse_vision()
+        rclpy.spin(detector)
     except KeyboardInterrupt:
         pass
     detector.release_cap()
