@@ -344,3 +344,5 @@ install/
 
 imu_vals_10s_arr.csv
 imu_cov_matrix.csv
+
+custom_model_lite/
