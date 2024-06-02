@@ -19,10 +19,13 @@ from vision_msgs.msg import Point2D
 
 class LegoDetector(Node):
 
-    def __init__(self, model_name, graph_name, labelmap_name, UI = False, min_thresh = 0.5, timer_period=0.1, use_TPU=False):
-        self._UI = UI
+    def __init__(self, model_name, graph_name, labelmap_name, min_thresh = 0.8, timer_period=0.1, use_TPU=False):
         # ROS stuff
         super().__init__("lego_detector")
+        # declare parameters
+        self.declare_parameter('UI', False)
+        self._UI = self.get_parameter('UI').get_parameter_value().bool_value
+        # declare callback and create publisher
         self.timer_period = timer_period
         self.timer = self.create_timer(timer_period, self.analyse_vision)
         self.video_capture = cv2.VideoCapture(0)
@@ -191,7 +194,7 @@ def main(args=None):
     MODEL_NAME = 'custom_model_lite'
     GRAPH_NAME = 'detect.tflite'
     LABELMAP_NAME = 'labelmap.txt'
-    detector = LegoDetector(MODEL_NAME, GRAPH_NAME, LABELMAP_NAME, UI=False)
+    detector = LegoDetector(MODEL_NAME, GRAPH_NAME, LABELMAP_NAME)
     try:
         rclpy.spin(detector)
     except KeyboardInterrupt:
