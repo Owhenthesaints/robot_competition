@@ -19,7 +19,8 @@ from vision_msgs.msg import Point2D
 
 class LegoDetector(Node):
 
-    def __init__(self, model_name, graph_name, labelmap_name, min_thresh = 0.5, timer_period=0.1, use_TPU=False):
+    def __init__(self, model_name, graph_name, labelmap_name, UI = False, min_thresh = 0.5, timer_period=0.1, use_TPU=False):
+        self._UI = UI
         # ROS stuff
         super().__init__("lego_detector")
         self.timer_period = timer_period
@@ -88,13 +89,15 @@ class LegoDetector(Node):
         ret = self.video_capture.set(3, self.__imH)
         ret = self.video_capture.set(4, self.__imW)
         self.frequency = cv2.getTickFrequency()
-        self.frame_rate_calc = 1
+        if self._UI:
+            self.frame_rate_calc = 1
 
     def release_cap(self):
         self.video_capture.release()
 
     def analyse_vision(self):
-        t1 = cv2.getTickCount()
+        if self._UI:
+            t1 = cv2.getTickCount()
         # get frame
         hasFrame, frame1 = self.video_capture.read()
 
@@ -138,26 +141,28 @@ class LegoDetector(Node):
                 xmax = int(min(self.__imW, (boxes[i][3] * self.__imW)))
                 points = np.append(points, np.array([[(xmax-xmin)/2, (ymax - ymin)/2]]), axis = 0)
 
-                # Draw bounding box
-                cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+                if self._UI:
+                    # Draw bounding box
+                    cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
 
-                # Get object's name and draw label
-                object_name = self.labels[int(classes[i])] # Look up object name from "labels" array using class index
-                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'quarter: 72%'
-                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-                cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-                cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+                    # Get object's name and draw label
+                    object_name = self.labels[int(classes[i])] # Look up object name from "labels" array using class index
+                    label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'quarter: 72%'
+                    labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                    label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                    cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                    cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
         
         self.get_logger().debug(f"points.shape: {points.shape}")
 
-        # Draw framerate in corner of frame
-        cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(0,0,0),4,cv2.LINE_AA)
-        cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(230,230,230),2,cv2.LINE_AA)
+        if self._UI:
+            # Draw framerate in corner of frame
+            cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(0,0,0),4,cv2.LINE_AA)
+            cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(230,230,230),2,cv2.LINE_AA)
 
-        # All the results have been drawn on the frame, so it's time to display it.
-        cv2.imshow('Object detector', frame)
-        cv2.waitKey(1)
+            # All the results have been drawn on the frame, so it's time to display it.
+            cv2.imshow('Object detector', frame)
+            cv2.waitKey(1)
 
         if points.shape[0] == 0:
             return
@@ -168,10 +173,11 @@ class LegoDetector(Node):
         msg.y = float(points[np.argmin(distances)][1])
         self._publisher.publish(msg)
 
-        # Calculate framerate
-        t2 = cv2.getTickCount()
-        time1 = (t2-t1)/self.frequency
-        self.frame_rate_calc= 1/time1 
+        if self._UI:
+            # Calculate framerate
+            t2 = cv2.getTickCount()
+            time1 = (t2-t1)/self.frequency
+            self.frame_rate_calc= 1/time1 
 
 
 
@@ -185,7 +191,7 @@ def main(args=None):
     MODEL_NAME = 'custom_model_lite'
     GRAPH_NAME = 'detect.tflite'
     LABELMAP_NAME = 'labelmap.txt'
-    detector = LegoDetector(MODEL_NAME, GRAPH_NAME, LABELMAP_NAME)
+    detector = LegoDetector(MODEL_NAME, GRAPH_NAME, LABELMAP_NAME, UI=False)
     try:
         rclpy.spin(detector)
     except KeyboardInterrupt:
