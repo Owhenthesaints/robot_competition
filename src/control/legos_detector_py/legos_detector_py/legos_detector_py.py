@@ -1,12 +1,6 @@
-######## Count Change Using Object Detection #########
-#
-# Author: Evan Juras, EJ Technology Consultants (www.ejtech.io)
+### This code is heavily inspired and some parts are taken from https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi/tree/master
 # Date: 10/29/22
-#  
-# Description:
-# This program uses a TFLite coin detection model to locate and identify coins in 
-# a live camera feed. It calculates the total value of the coins in the camera's view.
-# (Works on US currency, but can be modified to work with coins from other countries!)
+# This code is subject to the Apache Liscence 2.0
 
 # Import packages
 import os
