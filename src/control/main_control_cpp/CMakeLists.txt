@@ -13,6 +13,12 @@ find_package(example_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(vision_msgs REQUIRED)
 
+add_executable(main_control_cpp src/main_control_cpp.cpp)
+ament_target_dependencies(main_control_cpp std_msgs rclcpp sensor_msgs example_interfaces vision_msgs)
+install(TARGETS
+    main_control_cpp
+    DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
