@@ -14,7 +14,8 @@ from ament_index_python.packages import get_package_share_directory
 from rclpy.node import Node
 import rclpy
 import importlib.util
-from vision_msgs.msg import Point2D
+from vision_msgs.msg import BoundingBox2DArray, Pose2D, Point2D, BoundingBox2D
+from std_msgs.msg import Header
 
 
 class LegoDetector(Node):
@@ -29,7 +30,7 @@ class LegoDetector(Node):
         self.timer_period = timer_period
         self.timer = self.create_timer(timer_period, self.analyse_vision)
         self.video_capture = cv2.VideoCapture(0)
-        self._publisher = self.create_publisher(Point2D, 'robot/camera/lego_detected', 10)
+        self._publisher = self.create_publisher(BoundingBox2DArray, 'robot/camera/lego_detected', 10)
 
         # Vision
         CWD_PATH = get_package_share_directory('legos_detector_py')
@@ -131,7 +132,12 @@ class LegoDetector(Node):
         # Confidence of detected objects
         scores = self.interpreter.get_tensor(self.__output_details[self.__scores_idx]['index'])[0]  
 
-        points = np.empty((0, 2))
+        msg = BoundingBox2DArray()
+        header = Header()
+        header.stamp = self.get_clock().now().to_msg()
+        header.frame_id = "base_link"
+        msg.header = header
+        
         # Loop over all detections and process each detection if its confidence is above minimum threshold
         for i in range(len(scores)):
             if ((scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0)):
@@ -142,7 +148,18 @@ class LegoDetector(Node):
                 xmin = int(max(1, (boxes[i][1] * self.__imW)))
                 ymax = int(min(self.__imH, (boxes[i][2] * self.__imH)))
                 xmax = int(min(self.__imW, (boxes[i][3] * self.__imW)))
-                points = np.append(points, np.array([[(xmax-xmin)/2, (ymax - ymin)/2]]), axis = 0)
+                bounding_box = BoundingBox2D()
+                center = Pose2D()
+                position = Point2D()
+                position.x = float(xmin)
+                position.y = float(ymin)
+                center.position = position
+                center.theta = 0.0
+                bounding_box.size_x = float(xmax - xmin)
+                bounding_box.size_y = float(ymax-ymin)
+                bounding_box.center = center
+                msg.boxes.append(bounding_box)
+
 
                 if self._UI:
                     # Draw bounding box
@@ -156,8 +173,6 @@ class LegoDetector(Node):
                     cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
                     cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
         
-        self.get_logger().debug(f"points.shape: {points.shape}")
-
         if self._UI:
             # Draw framerate in corner of frame
             cv2.putText(frame,'FPS: %.2f' % self.frame_rate_calc,(20,50),cv2.FONT_HERSHEY_PLAIN,2,(0,0,0),4,cv2.LINE_AA)
@@ -167,13 +182,7 @@ class LegoDetector(Node):
             cv2.imshow('Object detector', frame)
             cv2.waitKey(1)
 
-        if points.shape[0] == 0:
-            return
         
-        distances = np.sum((points - np.array([[self.__imW/2, self.__imH/2]]))**2)
-        msg = Point2D()
-        msg.x = float(points[np.argmin(distances)][0])
-        msg.y = float(points[np.argmin(distances)][1])
         self._publisher.publish(msg)
 
         if self._UI:
