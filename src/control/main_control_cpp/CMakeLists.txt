@@ -13,7 +13,7 @@ find_package(example_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(vision_msgs REQUIRED)
 
-add_executable(main_control_cpp src/main_control_cpp.cpp)
+add_executable(main_control_cpp src/main_control_cpp.cpp src/main_controller.cpp)
 ament_target_dependencies(main_control_cpp std_msgs rclcpp sensor_msgs example_interfaces vision_msgs)
 install(TARGETS
     main_control_cpp
