@@ -40,12 +40,6 @@ def generate_launch_description():
             namespace="",
             name='control_override_joy',
         ),
-        Node(
-            package='joy',
-            executable='joy_node',
-            namespace="",
-            name='joy',
-        ),
     ])
 
 
