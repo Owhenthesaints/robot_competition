@@ -3,8 +3,10 @@
 #include <example_interfaces/msg/u_int8_multi_array.hpp>
 #include <algorithm>
 #include <typeinfo>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <armadillo>
 
-MainController::MainController() : rclcpp::Node("main_controller") 
+MainController::MainController() : rclcpp::Node("main_controller")
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -12,6 +14,7 @@ MainController::MainController() : rclcpp::Node("main_controller")
     distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10, [this](const distanceType::SharedPtr msg)
                                                                          { this->distanceCallback(msg); });
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
+    timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
 }
 
 void MainController::mainLoop(){
@@ -37,7 +40,26 @@ void MainController::sendCommand(int8_t left, int8_t right){
 }
 
 void MainController::obstacleAvoidance(){
+    
+    arma::vec sensorValues(NUM_DIST_SENSORS);
+    arma::vec active(NUM_DIST_SENSORS);
 
+    for (size_t i = 0; i < distanceSensors.size(); ++i){
+        sensorValues(i) = static_cast<double>(distanceSensors[i]);
+        active(i) = static_cast<double>(activatedSensors[i]);
+    }
+
+    sensorValues = 50 - (sensorValues % active);
+    
+
+    arma::vec offset = {50, 50};
+
+    arma::mat W = {{1, 1, 1, -1, -1}, {-1, -1, -1, 1, 1}};
+
+    arma::vec motorInputs = (W * sensorValues) + offset;
+
+    this->sendCommand(motorInputs(0), motorInputs(1));
+    
 }
 
 void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){

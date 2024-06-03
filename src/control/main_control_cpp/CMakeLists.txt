@@ -12,9 +12,15 @@ find_package(sensor_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(vision_msgs REQUIRED)
+find_package(Armadillo REQUIRED)
 
 add_executable(main_control_cpp src/main_control_cpp.cpp src/main_controller.cpp)
 ament_target_dependencies(main_control_cpp std_msgs rclcpp sensor_msgs example_interfaces vision_msgs)
+# Link the Armadillo library
+target_link_libraries(main_control_cpp ${ARMADILLO_LIBRARIES})
+
+# Include the Armadillo directories
+target_include_directories(main_control_cpp PRIVATE ${ARMADILLO_INCLUDE_DIRS})
 install(TARGETS
     main_control_cpp
     DESTINATION lib/${PROJECT_NAME})

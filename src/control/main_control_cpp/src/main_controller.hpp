@@ -40,6 +40,7 @@ private:
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
+    rclcpp::TimerBase::SharedPtr timer_;
 };
 
 
