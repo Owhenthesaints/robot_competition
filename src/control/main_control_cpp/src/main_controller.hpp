@@ -22,14 +22,31 @@ class MainController : public rclcpp::Node {
 public:
     explicit MainController();
 private:
+    /**
+     * @brief main callback function (our state machine)
+    */
     void mainLoop();
     using legoVisionType = vision_msgs::msg::BoundingBox2DArray;
     using distanceType = example_interfaces::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     void pathing();
+    /**
+     * @brief get the positions of lego bricks
+    */
     void legoDetectionCallback(const legoVisionType::SharedPtr msg);
+    /**
+     * @brief get the values of the distance sensors
+    */
     void distanceCallback(const distanceType::SharedPtr msg);
+    /**
+     * @brief send a command to the motors
+     * @param left left motor value [-100;100]
+     * @param right right motor value [-100;100]
+    */
     void sendCommand(int8_t left, int8_t right);
+    /**
+     * @brief go straight with local navigation
+    */
     void obstacleAvoidance();
     void return_to_base();
     void go_to_lego();
@@ -38,6 +55,8 @@ private:
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
+    std::array<uint8_t, NUM_DIST_SENSORS> countTracker = {0, 0, 0, 0, 0};
+    bool started;
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;

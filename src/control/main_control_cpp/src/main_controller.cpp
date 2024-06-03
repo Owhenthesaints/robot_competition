@@ -66,14 +66,25 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
     
 }
 
-void MainController::distanceCallback(const distanceType::SharedPtr msg){
+void MainController::distanceCallback(const distanceType::SharedPtr msg)
+{
+    // copy contents of msg into sensor
     std::copy(msg->data.begin(), msg->data.begin() + NUM_DIST_SENSORS, distanceSensors.begin());
-    auto it = distanceSensors.begin();
-    it = std::find_if(it, distanceSensors.end(), [](uint8_t value){return value > DANGER_THRESH;});
+    // Simple code to descide to reduce noise it asks if the captors have had detection three times in a row
     activatedSensors = {false, false, false, false, false};
-    while (it!=distanceSensors.end()){
-        int index = it - distanceSensors.begin();
-        this->activatedSensors[index] = true;
-        it = std::find_if(it, distanceSensors.end(), [](uint8_t value){return value > DANGER_THRESH;});
+    for (size_t i(0); i < activatedSensors.size(); i++)
+    {
+        if (started && distanceSensors[i] <= 50) {
+            if (countTracker[i] > 3){
+                activatedSensors[i] = true;
+            }
+            else
+                countTracker[i]++;
+        }
+        else if (started)
+        {
+            countTracker[i] = 0;
+            activatedSensors[i] = false;
+        }
     }
 }
