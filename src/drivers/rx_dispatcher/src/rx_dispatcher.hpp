@@ -139,17 +139,17 @@ private:
         msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "base_link";
         int16_t difference = motorArray_[1] - motorArray_[0];
-        msg.twist.twist.angular.z = difference /2 * DIAMETER_WHEEL/2 * WHEEL_SPEED_CONVERSION_TO_RAD /(ROBOT_WIDTH/2);
+        msg.twist.twist.angular.z = difference / 2 * DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD / (ROBOT_WIDTH / 2);
         msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD * ((motorArray_[0] + motorArray_[1]) / (double)2); // get the speed of the motor
         msg.twist.twist.linear.y = 0;
         msg.twist.twist.linear.z = 0;
         msg.twist.covariance = std::array<double, 36>({
-            0.04, 0, 0, 0, 0, 0, // Variance in x (0.05^2)
-            0, 0.02, 0, 0, 0, 0, // Variance in y (0.05^2)
-            0, 0, 0.02, 0, 0, 0, // Variance in z (0.01^2)
+            0.04, 0, 0, 0, 0, 0,    // Variance in x (0.05^2)
+            0, 0.02, 0, 0, 0, 0,    // Variance in y (0.05^2)
+            0, 0, 0.02, 0, 0, 0,    // Variance in z (0.01^2)
             0, 0, 0, 0.02, 0.02, 0, // Variance in roll (0.01^2)
-            0, 0, 0, 0, 0.04, 0, // Variance in pitch (0.01^2)
-            0, 0, 0, 0, 0, 0.04  // Variance in yaw (0.02^2)
+            0, 0, 0, 0, 0.04, 0,    // Variance in pitch (0.01^2)
+            0, 0, 0, 0, 0, 0.04     // Variance in yaw (0.02^2)
         });
         speedPublisher_->publish(msg);
     }
