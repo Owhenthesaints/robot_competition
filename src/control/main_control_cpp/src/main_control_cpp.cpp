@@ -1,6 +1,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include "main_controller.hpp"
 
-int main() {
-    
+int main(int argc, char **argv)
+{
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<MainController>());
+    rclcpp::shutdown();
 }

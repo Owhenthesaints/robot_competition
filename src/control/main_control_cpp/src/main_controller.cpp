@@ -15,9 +15,11 @@ MainController::MainController() : rclcpp::Node("main_controller")
                                                                          { this->distanceCallback(msg); });
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
+    RCLCPP_DEBUG(this->get_logger(), "successfully initiated");
 }
 
 void MainController::mainLoop(){
+    RCLCPP_DEBUG(this->get_logger(), "in main loop");
     switch(state){
     case RobotState::STRAIGHT_LINE:
         this->obstacleAvoidance();
@@ -34,8 +36,8 @@ void MainController::sendCommand(int8_t left, int8_t right){
     auto msg = motorType();
     left = MIN(MOTOR_MAX, MAX(left, MOTOR_MIN));
     right = MIN(MOTOR_MAX, MAX(left, MOTOR_MIN));
-    msg.data[0] = left;
-    msg.data[1] = right;
+    msg.data.push_back(left);
+    msg.data.push_back(right);
     this->motorCommandSender->publish(msg);
 }
 
@@ -57,6 +59,8 @@ void MainController::obstacleAvoidance(){
     arma::mat W = {{1, 1, 1, -1, -1}, {-1, -1, -1, 1, 1}};
 
     arma::vec motorInputs = (W * sensorValues) + offset;
+
+    RCLCPP_DEBUG(this->get_logger(), "finished arma operations obstacle avoidance");
 
     this->sendCommand(motorInputs(0), motorInputs(1));
     
@@ -87,4 +91,5 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
             activatedSensors[i] = false;
         }
     }
+    RCLCPP_DEBUG(this->get_logger(), "updated distance sensor values");
 }

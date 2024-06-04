@@ -20,7 +20,7 @@ enum class RobotState {
 
 class MainController : public rclcpp::Node {
 public:
-    explicit MainController();
+    MainController();
 private:
     /**
      * @brief main callback function (our state machine)
