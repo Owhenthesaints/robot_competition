@@ -1,4 +1,5 @@
 #include "main_controller.hpp"
+#include <rclcpp/rclcpp.hpp>
 #include <vision_msgs/msg/bounding_box2_d_array.hpp>
 #include <example_interfaces/msg/u_int8_multi_array.hpp>
 #include <algorithm>
@@ -6,13 +7,14 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <armadillo>
 
+
 MainController::MainController() : rclcpp::Node("main_controller")
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
                                                                  { this->legoDetectionCallback(msg); });
-    distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10, [this](const distanceType::SharedPtr msg)
-                                                                         { this->distanceCallback(msg); });
+    distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10,
+                                                                            std::bind(&MainController::distanceCallback, this, std::placeholders::_1));
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
     RCLCPP_DEBUG(this->get_logger(), "successfully initiated");
@@ -52,7 +54,9 @@ void MainController::obstacleAvoidance(){
     }
 
     sensorValues = 50 - (sensorValues % active);
-    
+
+    RCLCPP_DEBUG(this->get_logger(), "sensorValues 0  %.2f", sensorValues(0));
+    RCLCPP_DEBUG(this->get_logger(), "sensorValue 1 %.2f", sensorValues(2));
 
     arma::vec offset = {50, 50};
 
@@ -72,6 +76,7 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
 
 void MainController::distanceCallback(const distanceType::SharedPtr msg)
 {
+    RCLCPP_DEBUG(this->get_logger(), "in callback");
     // copy contents of msg into sensor
     std::copy(msg->data.begin(), msg->data.begin() + NUM_DIST_SENSORS, distanceSensors.begin());
     // Simple code to descide to reduce noise it asks if the captors have had detection three times in a row
@@ -91,5 +96,4 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
             activatedSensors[i] = false;
         }
     }
-    RCLCPP_DEBUG(this->get_logger(), "updated distance sensor values");
 }

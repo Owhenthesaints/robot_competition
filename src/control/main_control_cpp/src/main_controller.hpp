@@ -48,8 +48,6 @@ private:
      * @brief go straight with local navigation
     */
     void obstacleAvoidance();
-    void return_to_base();
-    void go_to_lego();
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
