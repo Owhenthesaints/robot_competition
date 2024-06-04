@@ -1,7 +1,7 @@
 #include "main_controller.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <vision_msgs/msg/bounding_box2_d_array.hpp>
-#include <example_interfaces/msg/u_int8_multi_array.hpp>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
 #include <algorithm>
 #include <typeinfo>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -78,8 +78,6 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
 
 void MainController::distanceCallback(const distanceType::SharedPtr msg)
 {
-    RCLCPP_DEBUG(this->get_logger(), "in callback");
-    // copy contents of msg into sensor
     // Simple code to descide to reduce noise it asks if the captors have had detection three times in a row
     activatedSensors = {false, false, false, false, false};
     for (size_t i(0); i < activatedSensors.size(); i++)

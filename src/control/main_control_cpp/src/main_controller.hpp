@@ -3,7 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <vision_msgs/msg/bounding_box2_d_array.hpp>
-#include <example_interfaces/msg/u_int8_multi_array.hpp>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
 #include <example_interfaces/msg/int8_multi_array.hpp>
 
 #define NUM_DIST_SENSORS 5
@@ -27,7 +27,7 @@ private:
     */
     void mainLoop();
     using legoVisionType = vision_msgs::msg::BoundingBox2DArray;
-    using distanceType = example_interfaces::msg::UInt8MultiArray;
+    using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     void pathing();
     /**
