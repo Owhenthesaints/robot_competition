@@ -54,7 +54,7 @@ private:
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
     std::array<uint8_t, NUM_DIST_SENSORS> countTracker = {0, 0, 0, 0, 0};
-    bool started;
+    bool started = true;
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;

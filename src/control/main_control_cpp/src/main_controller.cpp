@@ -8,7 +8,7 @@
 #include <armadillo>
 
 
-MainController::MainController() : rclcpp::Node("main_controller")
+MainController::MainController() : rclcpp::Node("main_controller"), started(true)
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -37,7 +37,7 @@ void MainController::mainLoop(){
 void MainController::sendCommand(int8_t left, int8_t right){
     auto msg = motorType();
     left = MIN(MOTOR_MAX, MAX(left, MOTOR_MIN));
-    right = MIN(MOTOR_MAX, MAX(left, MOTOR_MIN));
+    right = MIN(MOTOR_MAX, MAX(right, MOTOR_MIN));
     msg.data.push_back(left);
     msg.data.push_back(right);
     this->motorCommandSender->publish(msg);
@@ -53,7 +53,7 @@ void MainController::obstacleAvoidance(){
         active(i) = static_cast<double>(activatedSensors[i]);
     }
 
-    sensorValues = 50 - (sensorValues % active);
+    sensorValues = (50 - sensorValues) % active;
 
     RCLCPP_DEBUG(this->get_logger(), "sensorValues 0  %.2f", sensorValues(0));
     RCLCPP_DEBUG(this->get_logger(), "sensorValue 1 %.2f", sensorValues(2));
@@ -64,9 +64,11 @@ void MainController::obstacleAvoidance(){
 
     arma::vec motorInputs = (W * sensorValues) + offset;
 
+    RCLCPP_DEBUG(this->get_logger(), "motor updates %.2f, %.2f", motorInputs(0), motorInputs(1));
+
     RCLCPP_DEBUG(this->get_logger(), "finished arma operations obstacle avoidance");
 
-    this->sendCommand(motorInputs(0), motorInputs(1));
+    this->sendCommand(static_cast<int8_t>(motorInputs(0)), static_cast<int8_t>(motorInputs(1)));
     
 }
 
@@ -78,12 +80,12 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
 {
     RCLCPP_DEBUG(this->get_logger(), "in callback");
     // copy contents of msg into sensor
-    std::copy(msg->data.begin(), msg->data.begin() + NUM_DIST_SENSORS, distanceSensors.begin());
     // Simple code to descide to reduce noise it asks if the captors have had detection three times in a row
     activatedSensors = {false, false, false, false, false};
     for (size_t i(0); i < activatedSensors.size(); i++)
     {
-        if (started && distanceSensors[i] <= 50) {
+        distanceSensors[i] = msg->data[i];
+        if (started && (distanceSensors[i] <= 50)) {
             if (countTracker[i] > 3){
                 activatedSensors[i] = true;
             }
@@ -95,5 +97,6 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
             countTracker[i] = 0;
             activatedSensors[i] = false;
         }
+        RCLCPP_DEBUG(this->get_logger(), "in iteration %zu, value inside sensor %u", i, distanceSensors[i]);
     }
 }
