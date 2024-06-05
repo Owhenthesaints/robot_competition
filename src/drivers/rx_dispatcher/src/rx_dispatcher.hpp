@@ -16,6 +16,7 @@
 #define DIAMETER_WHEEL 0.1142 // m
 #define ONEHUNDRED_TO_RPM 2060
 #define REDUCTION_RATIO 60
+#define PWM_CUTOFF 28
 //
 #define PI 3.14159265358979323846
 constexpr double WHEEL_SPEED_CONVERSION_TO_RAD = ONEHUNDRED_TO_RPM / (double)100 / (double)60 * 2 * PI / (double)REDUCTION_RATIO;
@@ -138,9 +139,12 @@ private:
         auto msg = speedPublisherType();
         msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "base_link";
-        int16_t difference = motorArray_[1] - motorArray_[0];
-        msg.twist.twist.angular.z = difference / 2 * DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD / (ROBOT_WIDTH / 2);
-        msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD * ((motorArray_[0] + motorArray_[1]) / (double)2); // get the speed of the motor
+        // Check if the motors are above arduino cutoff
+        int16_t left = static_cast<int16_t>(motorArray_[0]>PWM_CUTOFF || motorArray_[0]< -PWM_CUTOFF? motorArray_[0]: 0);
+        int16_t right = static_cast<int16_t>(motorArray_[1]>PWM_CUTOFF || motorArray_[1]< -PWM_CUTOFF? motorArray_[1]: 0);
+        int16_t difference = right - left;
+        msg.twist.twist.angular.z = difference / (double)2 * DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD / (ROBOT_WIDTH / 2);
+        msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD * ((left + right) / (double)2); // get the speed of the motor
         msg.twist.twist.linear.y = 0;
         msg.twist.twist.linear.z = 0;
         msg.twist.covariance = std::array<double, 36>({
