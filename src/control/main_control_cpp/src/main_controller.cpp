@@ -53,9 +53,9 @@ void MainController::turnToLego()
     if(!(legoPositions[lowest_index][0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions[lowest_index][0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
     {
         if(legoPositions[lowest_index][0] > THRESHOLD_MIDDLE + MIDDLE_FRAME){
-            this->sendCommand(50, -50);
+            this->sendCommand(30, -30);
         } else if (legoPositions[lowest_index][0] < MIDDLE_FRAME - THRESHOLD_MIDDLE) {
-            this->sendCommand(-50, 50);
+            this->sendCommand(-30, 30);
         }
     } else {
         this->sendCommand(0,0);
