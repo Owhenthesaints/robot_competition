@@ -73,7 +73,14 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
-    
+    for(size_t i(0); i<msg->boxes.size(); i++){
+        if(msg->boxes[i].size_x > MAX_BOX_SIZE){
+            continue;
+        }
+        else {
+            legoPositions.push_back(std::array<int, 2>({static_cast<int>(msg->boxes[i].center.position.x), static_cast<int>(msg->boxes[i].center.position.y)}));
+        }
+    }
 }
 
 void MainController::distanceCallback(const distanceType::SharedPtr msg)

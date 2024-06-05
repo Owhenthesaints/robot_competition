@@ -141,6 +141,7 @@ class LegoDetector(Node):
         # Loop over all detections and process each detection if its confidence is above minimum threshold
         for i in range(len(scores)):
             if ((scores[i] > self.min_conf_threshold) and (scores[i] <= 1.0)):
+                self.get_logger().debug("appending boxes")
 
                 # Get bounding box coordinates
                 # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
@@ -151,12 +152,12 @@ class LegoDetector(Node):
                 bounding_box = BoundingBox2D()
                 center = Pose2D()
                 position = Point2D()
-                position.x = float(xmin)
-                position.y = float(ymin)
+                position.x = float((xmin + xmax)/2)
+                position.y = float((ymin + ymax)/2)
                 center.position = position
                 center.theta = 0.0
                 bounding_box.size_x = float(xmax - xmin)
-                bounding_box.size_y = float(ymax-ymin)
+                bounding_box.size_y = float(ymax - ymin)
                 bounding_box.center = center
                 msg.boxes.append(bounding_box)
 

@@ -5,6 +5,7 @@
 #include <vision_msgs/msg/bounding_box2_d_array.hpp>
 #include <std_msgs/msg/u_int8_multi_array.hpp>
 #include <example_interfaces/msg/int8_multi_array.hpp>
+#include <vector>
 
 #define NUM_DIST_SENSORS 5
 #define DANGER_THRESH 50
@@ -12,6 +13,7 @@
 #define MOTOR_MAX 100
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MAX_BOX_SIZE 500
 
 enum class RobotState {
     STRAIGHT_LINE,
@@ -51,6 +53,7 @@ private:
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
+    std::vector<std::array<int, 2>> legoPositions;
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
     std::array<uint8_t, NUM_DIST_SENSORS> countTracker = {0, 0, 0, 0, 0};

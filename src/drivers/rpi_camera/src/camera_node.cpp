@@ -18,7 +18,7 @@ public:
         // init camera
         cap.open(0);
         if (!cap.isOpened()) {
-            RCLCPP_INFO(this->get_logger(), "Could not open camera");
+            RCLCPP_ERROR(this->get_logger(), "Could not open camera");
             exit(0);
         }
     }
