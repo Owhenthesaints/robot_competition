@@ -25,11 +25,12 @@ class LegoDetector(Node):
         super().__init__("lego_detector")
         # declare parameters
         self.declare_parameter('UI', False)
+        self.declare_parameter('camNum', 0)
         self._UI = self.get_parameter('UI').get_parameter_value().bool_value
         # declare callback and create publisher
         self.timer_period = timer_period
         self.timer = self.create_timer(timer_period, self.analyse_vision)
-        self.video_capture = cv2.VideoCapture(0)
+        self.video_capture = cv2.VideoCapture(self.get_parameter('camNum').get_parameter_value().integer_value)
         self._publisher = self.create_publisher(BoundingBox2DArray, 'robot/camera/lego_detected', 10)
 
         # Vision
