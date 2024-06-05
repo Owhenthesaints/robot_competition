@@ -1,5 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
-#include "example_interfaces/msg/u_int8_multi_array.hpp"
+#include "std_msgs/msg/u_int8_multi_array.hpp"
 #include <chrono>
 
 using namespace std::chrono_literals;
@@ -30,7 +30,7 @@ private:
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<DemoProximitySensor<example_interfaces::msg::UInt8MultiArray>>();
+    auto node = std::make_shared<DemoProximitySensor<std_msgs::msg::UInt8MultiArray>>();
     rclcpp::spin(node);
     return 0;
 }
