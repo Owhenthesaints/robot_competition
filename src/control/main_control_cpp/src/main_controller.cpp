@@ -58,6 +58,7 @@ void MainController::turnToLego()
             this->sendCommand(-50, 50);
         }
     } else {
+        this->sendCommand(0,0);
         this-> state = RobotState::GO_TO_LEGO;
     }
 }
