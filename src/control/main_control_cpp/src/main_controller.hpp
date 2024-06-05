@@ -14,10 +14,14 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
+#define MIDDLE_FRAME 600
+#define THRESHOLD_MIDDLE 50
 
 enum class RobotState {
     STRAIGHT_LINE,
     RETURN_TO_BASE,
+    AIM_FOR_LEGOS,
+    GO_TO_LEGO,
 };
 
 class MainController : public rclcpp::Node {
@@ -32,6 +36,7 @@ private:
     using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     void pathing();
+    void turnToLego();
     /**
      * @brief get the positions of lego bricks
     */

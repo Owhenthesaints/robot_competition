@@ -24,13 +24,41 @@ void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop");
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        this->obstacleAvoidance();
+        this->turnToLego();
         break;
     case RobotState::RETURN_TO_BASE:
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
         break;
+    }
+}
+
+void MainController::turnToLego()
+{
+    RCLCPP_DEBUG(this->get_logger(), "in turnToLego");
+    // Do not enter function if no legos detected
+    if (legoPositions.size()==0){
+        return;
+    }
+    size_t lowest_index = 0;
+    for (size_t i(0); i < legoPositions.size(); i++)
+    {
+        size_t lowest_index = legoPositions[lowest_index][1] > legoPositions[i][1] ? lowest_index : i;
+    }
+
+    RCLCPP_DEBUG(this->get_logger(), "lowest index, lowest duplo x, y: %zu, %d, %d", lowest_index, legoPositions[lowest_index][0], legoPositions[lowest_index][1]);
+
+
+    if(!(legoPositions[lowest_index][0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions[lowest_index][0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
+    {
+        if(legoPositions[lowest_index][0] > THRESHOLD_MIDDLE + MIDDLE_FRAME){
+            this->sendCommand(50, -50);
+        } else if (legoPositions[lowest_index][0] < MIDDLE_FRAME - THRESHOLD_MIDDLE) {
+            this->sendCommand(-50, 50);
+        }
+    } else {
+        this-> state = RobotState::GO_TO_LEGO;
     }
 }
 
@@ -73,6 +101,7 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
+    legoPositions.clear();
     for(size_t i(0); i<msg->boxes.size(); i++){
         if(msg->boxes[i].size_x > MAX_BOX_SIZE){
             continue;
