@@ -14,8 +14,8 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
-#define MIDDLE_FRAME 600
-#define THRESHOLD_MIDDLE 50
+#define MIDDLE_FRAME 700
+#define THRESHOLD_MIDDLE 150
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
 

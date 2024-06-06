@@ -30,6 +30,7 @@ void MainController::mainLoop(){
         if (time>lastStepChange + TIME_CHANGE_STATE_LOCAL){
             state = RobotState::AIM_FOR_LEGOS;
             lastStepChange = steadyClock.now().seconds();
+            this->sendCommand(0, 0);
         }
         break;
     case RobotState::AIM_FOR_LEGOS:
@@ -37,6 +38,7 @@ void MainController::mainLoop(){
         if(time>lastStepChange + TIME_CHANGE_STATE_TO_LEGO){
             state = RobotState::STRAIGHT_LINE;
             lastStepChange = steadyClock.now().seconds();
+            this->sendCommand(0, 0);
         }
         break;
     default:
