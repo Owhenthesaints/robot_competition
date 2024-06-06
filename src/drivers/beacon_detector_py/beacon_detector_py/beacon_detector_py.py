@@ -1,4 +1,4 @@
-from rclpy import Node
+from rclpy.node import Node
 from vision_msgs.msg import BoundingBox2DArray
 import cv2
 import rclpy
@@ -9,7 +9,7 @@ class BeaconDetector(Node):
         super().__init__("beacon_detector")
         self.declare_parameter('camNum', 0)
         timer_period = 0.25
-        self.publishers_ = self.create_publisher(BoundingBox2DArray, "robot/camera/beacon")
+        self.publishers_ = self.create_publisher(BoundingBox2DArray, "robot/camera/beacon", 10)
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.video_capture = cv2.VideoCapture(self.get_parameter('camNum').get_parameter_value().integer_value)
 
@@ -51,7 +51,7 @@ class BeaconDetector(Node):
         
         
 
-def main(args):
+def main(args = None):
     rclpy.init(args=args)
     rclpy.spin(BeaconDetector())
     rclpy.shutdown()
