@@ -8,7 +8,7 @@
 #include <armadillo>
 
 
-MainController::MainController() : rclcpp::Node("main_controller"), started(true)
+MainController::MainController() : rclcpp::Node("main_controller"), started(true), steadyClock(RCL_STEADY_TIME)
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -18,15 +18,26 @@ MainController::MainController() : rclcpp::Node("main_controller"), started(true
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
     RCLCPP_DEBUG(this->get_logger(), "successfully initiated");
+    lastStepChange = steadyClock.now().seconds();
 }
 
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop");
+    float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        this->turnToLego();
+        this->obstacleAvoidance();
+        if (time>lastStepChange + TIME_CHANGE_STATE_LOCAL){
+            state = RobotState::AIM_FOR_LEGOS;
+            lastStepChange = steadyClock.now().seconds();
+        }
         break;
-    case RobotState::RETURN_TO_BASE:
+    case RobotState::AIM_FOR_LEGOS:
+        this->turnToLego();
+        if(time>lastStepChange + TIME_CHANGE_STATE_TO_LEGO){
+            state = RobotState::STRAIGHT_LINE;
+            lastStepChange = steadyClock.now().seconds();
+        }
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -59,7 +70,6 @@ void MainController::turnToLego()
         }
     } else {
         this->sendCommand(0,0);
-        this-> state = RobotState::GO_TO_LEGO;
     }
 }
 

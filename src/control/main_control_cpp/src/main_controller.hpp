@@ -16,12 +16,13 @@
 #define MAX_BOX_SIZE 500
 #define MIDDLE_FRAME 600
 #define THRESHOLD_MIDDLE 50
+#define TIME_CHANGE_STATE_LOCAL 10
+#define TIME_CHANGE_STATE_TO_LEGO 5
+
 
 enum class RobotState {
     STRAIGHT_LINE,
-    RETURN_TO_BASE,
     AIM_FOR_LEGOS,
-    GO_TO_LEGO,
 };
 
 class MainController : public rclcpp::Node {
@@ -66,6 +67,8 @@ private:
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::Clock steadyClock;
+    float lastStepChange=0;
 };
 
 
