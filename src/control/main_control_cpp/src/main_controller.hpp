@@ -47,6 +47,10 @@ private:
     */
     void distanceCallback(const distanceType::SharedPtr msg);
     /**
+     * @brief update the states
+    */
+    void updateState();
+    /**
      * @brief send a command to the motors
      * @param left left motor value [-100;100]
      * @param right right motor value [-100;100]
@@ -69,6 +73,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Clock steadyClock;
     float lastStepChange=0;
+    
 };
 
 

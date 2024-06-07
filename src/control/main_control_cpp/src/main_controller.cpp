@@ -28,7 +28,7 @@ void MainController::mainLoop(){
     case RobotState::STRAIGHT_LINE:
         this->obstacleAvoidance();
         if (time>lastStepChange + TIME_CHANGE_STATE_LOCAL){
-            state = RobotState::AIM_FOR_LEGOS;
+            updateState();
             lastStepChange = steadyClock.now().seconds();
             this->sendCommand(0, 0);
         }
@@ -36,7 +36,7 @@ void MainController::mainLoop(){
     case RobotState::AIM_FOR_LEGOS:
         this->turnToLego();
         if(time>lastStepChange + TIME_CHANGE_STATE_TO_LEGO){
-            state = RobotState::STRAIGHT_LINE;
+            updateState();
             lastStepChange = steadyClock.now().seconds();
             this->sendCommand(0, 0);
         }
@@ -111,6 +111,16 @@ void MainController::obstacleAvoidance(){
 
     this->sendCommand(static_cast<int8_t>(motorInputs(0)), static_cast<int8_t>(motorInputs(1)));
     
+}
+
+void MainController::updateState(){
+    switch(state){
+    case RobotState::STRAIGHT_LINE:
+        state = RobotState::AIM_FOR_LEGOS;
+        break;
+    case RobotState::AIM_FOR_LEGOS:
+        state = RobotState::STRAIGHT_LINE;
+    }
 }
 
 void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
