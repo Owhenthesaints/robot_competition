@@ -110,7 +110,7 @@ class DetectorNode(Node):
         min_green = 1
         min_red = 255
         max_blue = 150
-        max_green = 8
+        max_green = 4
         max_red = 255
         self.MIN_INTENSITY = 250
         self.MAX_INTENSITY = 255
