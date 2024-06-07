@@ -55,15 +55,15 @@ void MainController::turnToLego()
         return;
     }
     size_t lowest_index = 0;
-    for (size_t i(0); i < legoPositions.size(); i++)
+    for (size_t i = 0; i < legoPositions.size(); i++)
     {
-        size_t lowest_index = legoPositions[lowest_index][1] > legoPositions[i][1] ? lowest_index : i;
+        lowest_index = legoPositions.at(lowest_index)[1] > legoPositions.at(i)[1] ? lowest_index : i;
     }
 
-    RCLCPP_DEBUG(this->get_logger(), "lowest index, lowest duplo x, y: %zu, %d, %d", lowest_index, legoPositions[lowest_index][0], legoPositions[lowest_index][1]);
+    RCLCPP_DEBUG(this->get_logger(), "lowest index, lowest duplo x, y: %zu, %d, %d", lowest_index, legoPositions.at(lowest_index)[0], legoPositions.at(lowest_index)[1]);
 
 
-    if(!(legoPositions[lowest_index][0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions[lowest_index][0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
+    if(!(legoPositions.at(lowest_index)[0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions.at(lowest_index)[0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
     {
         if(legoPositions[lowest_index][0] > THRESHOLD_MIDDLE + MIDDLE_FRAME){
             this->sendCommand(30, -30);
