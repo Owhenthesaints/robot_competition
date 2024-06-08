@@ -25,11 +25,15 @@
 #define CLOSE_BEACON 10
 #define NO_TIME -1
 #define LAST_HIGH_PWM 2
-
+#define RETURN_TO_BASE_TIME 50 // seconds
+#define TIME_TO_DETECT_BEACON 20
+#define TIME_TO_GO_STRAIGHT 10
 
 enum class RobotState {
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
+    AIM_FOR_BEACON,
+    DROP_OFF_LEGO,
 };
 
 class MainController : public rclcpp::Node {
@@ -89,6 +93,7 @@ private:
     rclcpp::Clock steadyClock;
     float lastStepChange=0;
     unsigned int lastCommandHigh = 0;
+    const double startTime = 0;
 };
 
 

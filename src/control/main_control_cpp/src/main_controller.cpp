@@ -8,7 +8,7 @@
 #include <armadillo>
 
 
-MainController::MainController() : rclcpp::Node("main_controller"), started(true), steadyClock(RCL_STEADY_TIME)
+MainController::MainController() : rclcpp::Node("main_controller"), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds())
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -28,7 +28,17 @@ void MainController::mainLoop(){
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        if(this-> turnToLego()) state = RobotState::AIM_FOR_LEGOS;
+        this->obstacleAvoidance();
+        if(time > lastStepChange + TIME_TO_GO_STRAIGHT)
+            this->updateState();
+        break;
+    case RobotState::AIM_FOR_LEGOS:
+        if(this->turnToLego())
+            this->updateState();
+        break;
+    case RobotState::AIM_FOR_BEACON:
+        if(this->turnToBeacon())
+            this->updateState();
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -39,7 +49,7 @@ void MainController::mainLoop(){
 void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg){
     foundBeaconTime = steadyClock.now().seconds();
     beaconPosition = {msg->center.position.x, msg->center.position.y};
-    inArea = msg->size_x > CLOSE_BEACON; // if the beacon is large enough we are in the zone
+    inArea = (msg->size_x) > CLOSE_BEACON; // if the beacon is large enough we are in the zone
 }
 
 bool MainController::turnToBeacon() {
@@ -83,7 +93,6 @@ bool MainController::turnToLego()
     }
 
     RCLCPP_DEBUG(this->get_logger(), "lowest index, lowest duplo x, y: %zu, %d, %d", lowest_index, legoPositions.at(lowest_index)[0], legoPositions.at(lowest_index)[1]);
-
 
     // try to place it at the middle of the camera
     if(!(legoPositions.at(lowest_index)[0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions.at(lowest_index)[0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
@@ -139,12 +148,38 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::updateState(){
+    double time = steadyClock.now().seconds();
+    lastStepChange = steadyClock.now().seconds();
+    // returning to base
+    if(time > startTime + RETURN_TO_BASE_TIME){
+        if (inArea){
+            state = RobotState::DROP_OFF_LEGO;
+            return;
+        }
+        switch(state){
+        case RobotState::AIM_FOR_BEACON:
+            state = RobotState::STRAIGHT_LINE;
+            break;
+        case RobotState::STRAIGHT_LINE:
+            state = RobotState::AIM_FOR_BEACON;
+            break;
+        default:
+            state = RobotState::AIM_FOR_BEACON;
+            break;
+        }
+    }
+
+    // normal pivotting state
     switch(state){
     case RobotState::STRAIGHT_LINE:
         state = RobotState::AIM_FOR_LEGOS;
         break;
     case RobotState::AIM_FOR_LEGOS:
         state = RobotState::STRAIGHT_LINE;
+        break;
+    default:
+        state = RobotState::STRAIGHT_LINE;
+        break;
     }
 }
 
