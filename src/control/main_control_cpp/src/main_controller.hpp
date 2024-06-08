@@ -24,6 +24,7 @@
 #define BEACON_THRESHOLD 50
 #define CLOSE_BEACON 10
 #define NO_TIME -1
+#define LAST_HIGH_PWM 2
 
 
 enum class RobotState {
@@ -87,7 +88,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Clock steadyClock;
     float lastStepChange=0;
-    bool lastCommandHigh = false;
+    unsigned int lastCommandHigh = 0;
 };
 
 

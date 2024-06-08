@@ -149,16 +149,16 @@ void MainController::updateState(){
 }
 
 void MainController::slowTurn(bool left){
-    if (lastCommandHigh){
+    if (lastCommandHigh > LAST_HIGH_PWM){
         this->sendCommand(0, 0);
-        lastCommandHigh= false;
+        lastCommandHigh= 0;
     } else {
         if (left)
             this->sendCommand(-30, 30); // turn left
         else
             this->sendCommand(30, -30); // turn right
 
-        lastCommandHigh = true;
+        lastCommandHigh++;
     }
 }
 
