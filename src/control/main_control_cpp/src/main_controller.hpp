@@ -3,6 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <vision_msgs/msg/bounding_box2_d_array.hpp>
+#include <vision_msgs/msg/bounding_box2_d.hpp>
 #include <std_msgs/msg/u_int8_multi_array.hpp>
 #include <example_interfaces/msg/int8_multi_array.hpp>
 #include <vector>
@@ -18,6 +19,11 @@
 #define THRESHOLD_MIDDLE 150
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
+#define BEACON_LOST_TIME 1
+#define MIDDLE_BEACON 400
+#define BEACON_THRESHOLD 100
+#define CLOSE_BEACON 10
+#define NO_TIME -1
 
 
 enum class RobotState {
@@ -36,7 +42,9 @@ private:
     using legoVisionType = vision_msgs::msg::BoundingBox2DArray;
     using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
+    using purpleBeaconType = vision_msgs::msg::BoundingBox2D;
     void pathing();
+    bool turnToBeacon();
     bool turnToLego();
     /**
      * @brief get the positions of lego bricks
@@ -60,7 +68,9 @@ private:
      * @brief go straight with local navigation
     */
     void obstacleAvoidance();
+    void purpleBeaconCallback(const purpleBeaconType::SharedPtr msg);
     void slowTurn(bool left = true);
+    std::shared_ptr<rclcpp::Subscription<purpleBeaconType>> baseBeaconSub;
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
@@ -68,6 +78,9 @@ private:
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
     std::array<uint8_t, NUM_DIST_SENSORS> countTracker = {0, 0, 0, 0, 0};
+    std::array<double, 2> beaconPosition = {0, 0};
+    bool inArea = false;
+    double foundBeaconTime = NO_TIME;
     bool started = true;
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;

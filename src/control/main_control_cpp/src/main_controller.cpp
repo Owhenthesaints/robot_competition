@@ -16,6 +16,8 @@ MainController::MainController() : rclcpp::Node("main_controller"), started(true
     distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10,
                                                                             std::bind(&MainController::distanceCallback, this, std::placeholders::_1));
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
+    baseBeaconSub = this->create_subscription<purpleBeaconType>("robot/camera/purple_beacon", 10,
+                                                        [this](const purpleBeaconType::SharedPtr msg){this->purpleBeaconCallback(msg);});
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
     RCLCPP_DEBUG(this->get_logger(), "successfully initiated");
     lastStepChange = steadyClock.now().seconds();
@@ -26,24 +28,36 @@ void MainController::mainLoop(){
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        this->obstacleAvoidance();
-        if (time>lastStepChange + TIME_CHANGE_STATE_LOCAL){
-            updateState();
-            lastStepChange = steadyClock.now().seconds();
-            this->sendCommand(0, 0);
-        }
-        break;
-    case RobotState::AIM_FOR_LEGOS:
-        if(this->turnToLego()){
-            updateState();
-            lastStepChange = steadyClock.now().seconds();
-            this->sendCommand(0, 0);
-        }
+        this-> turnToBeacon();
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
         break;
     }
+}
+
+void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg){
+    foundBeaconTime = steadyClock.now().seconds();
+    beaconPosition = {msg->center.position.x, msg->center.position.y};
+    inArea = msg->size_x > CLOSE_BEACON; // if the beacon is large enough we are in the zone
+}
+
+bool MainController::turnToBeacon() {
+    // if beacon is on camera screen 
+    if(steadyClock.now().seconds() - foundBeaconTime< BEACON_LOST_TIME){
+        if ((beaconPosition[0] < MIDDLE_BEACON + BEACON_THRESHOLD)||(beaconPosition[0] < MIDDLE_BEACON - BEACON_THRESHOLD))
+            return true;
+        else if (beaconPosition[0] > MIDDLE_BEACON + BEACON_THRESHOLD){
+            this->slowTurn(false);
+        }
+        else if (beaconPosition[0] < MIDDLE_BEACON + BEACON_THRESHOLD){
+            this->slowTurn(true);
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "logic error in turn to beacon");
+        }
+    }
+    this->slowTurn(true);
+    return false;
 }
 
 bool MainController::turnToLego()
@@ -53,6 +67,7 @@ bool MainController::turnToLego()
     if (legoPositions.size()==0){
         return true;
     }
+    // get the lowest lego
     size_t lowest_index = 0;
     for (size_t i = 0; i < legoPositions.size(); i++)
     {
@@ -62,6 +77,7 @@ bool MainController::turnToLego()
     RCLCPP_DEBUG(this->get_logger(), "lowest index, lowest duplo x, y: %zu, %d, %d", lowest_index, legoPositions.at(lowest_index)[0], legoPositions.at(lowest_index)[1]);
 
 
+    // try to place it at the middle of the camera
     if(!(legoPositions.at(lowest_index)[0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions.at(lowest_index)[0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
     {
         if(legoPositions[lowest_index][0] > THRESHOLD_MIDDLE + MIDDLE_FRAME){
