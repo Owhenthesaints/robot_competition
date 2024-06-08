@@ -28,7 +28,7 @@ void MainController::mainLoop(){
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        this-> turnToBeacon();
+        if(this-> turnToBeacon()) state = RobotState::AIM_FOR_LEGOS;
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -43,20 +43,28 @@ void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg)
 }
 
 bool MainController::turnToBeacon() {
+    RCLCPP_DEBUG(this->get_logger(), "in turn to beacon");
     // if beacon is on camera screen 
     if(steadyClock.now().seconds() - foundBeaconTime< BEACON_LOST_TIME){
-        if ((beaconPosition[0] < MIDDLE_BEACON + BEACON_THRESHOLD)||(beaconPosition[0] < MIDDLE_BEACON - BEACON_THRESHOLD))
+        if ((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD)){
+            RCLCPP_INFO(this->get_logger(), "centered on beacon x position, '%f'", beaconPosition[0]);
+            this->sendCommand(0, 0);
             return true;
+        }
         else if (beaconPosition[0] > MIDDLE_BEACON + BEACON_THRESHOLD){
+            RCLCPP_DEBUG(this->get_logger(), "turning right to beacon: x_position %f", beaconPosition[0]);
             this->slowTurn(false);
         }
-        else if (beaconPosition[0] < MIDDLE_BEACON + BEACON_THRESHOLD){
+        else if (beaconPosition[0] < MIDDLE_BEACON - BEACON_THRESHOLD){
+            RCLCPP_DEBUG(this->get_logger(), "turning left to beacon: x_position %f", beaconPosition[0]);
             this->slowTurn(true);
         } else {
             RCLCPP_ERROR(this->get_logger(), "logic error in turn to beacon");
         }
     }
-    this->slowTurn(true);
+    else {
+        this->slowTurn(true);
+    }
     return false;
 }
 
