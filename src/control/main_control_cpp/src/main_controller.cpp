@@ -28,7 +28,7 @@ void MainController::mainLoop(){
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
-        if(this-> turnToBeacon()) state = RobotState::AIM_FOR_LEGOS;
+        if(this-> turnToLego()) state = RobotState::AIM_FOR_LEGOS;
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -89,9 +89,9 @@ bool MainController::turnToLego()
     if(!(legoPositions.at(lowest_index)[0] > -THRESHOLD_MIDDLE + MIDDLE_FRAME && legoPositions.at(lowest_index)[0] < THRESHOLD_MIDDLE + MIDDLE_FRAME))
     {
         if(legoPositions[lowest_index][0] > THRESHOLD_MIDDLE + MIDDLE_FRAME){
-            this->sendCommand(30, -30);
+            this->slowTurn(false);
         } else if (legoPositions[lowest_index][0] < MIDDLE_FRAME - THRESHOLD_MIDDLE) {
-            this->sendCommand(-30, 30);
+            this->slowTurn(true);
         }
     } else {
         this->sendCommand(0,0);

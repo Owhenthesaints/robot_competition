@@ -16,7 +16,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
 #define MIDDLE_FRAME 750
-#define THRESHOLD_MIDDLE 150
+#define THRESHOLD_MIDDLE 100
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
 #define BEACON_LOST_TIME 1
