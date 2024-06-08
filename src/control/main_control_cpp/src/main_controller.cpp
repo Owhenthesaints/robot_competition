@@ -34,8 +34,7 @@ void MainController::mainLoop(){
         }
         break;
     case RobotState::AIM_FOR_LEGOS:
-        this->turnToLego();
-        if(time>lastStepChange + TIME_CHANGE_STATE_TO_LEGO){
+        if(this->turnToLego()){
             updateState();
             lastStepChange = steadyClock.now().seconds();
             this->sendCommand(0, 0);
@@ -47,12 +46,12 @@ void MainController::mainLoop(){
     }
 }
 
-void MainController::turnToLego()
+bool MainController::turnToLego()
 {
     RCLCPP_DEBUG(this->get_logger(), "in turnToLego");
     // Do not enter function if no legos detected
     if (legoPositions.size()==0){
-        return;
+        return true;
     }
     size_t lowest_index = 0;
     for (size_t i = 0; i < legoPositions.size(); i++)
@@ -72,7 +71,9 @@ void MainController::turnToLego()
         }
     } else {
         this->sendCommand(0,0);
+        return true;
     }
+    return false;
 }
 
 void MainController::sendCommand(int8_t left, int8_t right){
@@ -120,6 +121,20 @@ void MainController::updateState(){
         break;
     case RobotState::AIM_FOR_LEGOS:
         state = RobotState::STRAIGHT_LINE;
+    }
+}
+
+void MainController::slowTurn(bool left){
+    if (lastCommandHigh){
+        this->sendCommand(0, 0);
+        lastCommandHigh= false;
+    } else {
+        if (left)
+            this->sendCommand(-30, 30); // turn left
+        else
+            this->sendCommand(30, -30); // turn right
+
+        lastCommandHigh = true;
     }
 }
 

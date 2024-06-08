@@ -37,7 +37,7 @@ private:
     using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     void pathing();
-    void turnToLego();
+    bool turnToLego();
     /**
      * @brief get the positions of lego bricks
     */
@@ -60,6 +60,7 @@ private:
      * @brief go straight with local navigation
     */
     void obstacleAvoidance();
+    void slowTurn(bool left = true);
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
@@ -73,6 +74,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Clock steadyClock;
     float lastStepChange=0;
+    bool lastCommandHigh = false;
 };
 
 
