@@ -24,10 +24,11 @@ MainController::MainController() : rclcpp::Node("main_controller"), started(true
 }
 
 void MainController::mainLoop(){
-    RCLCPP_DEBUG(this->get_logger(), "in main loop");
+    RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::STRAIGHT_LINE:
+        RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
         this->obstacleAvoidance();
         if(time > lastStepChange + TIME_TO_GO_STRAIGHT)
             this->updateState();
@@ -37,6 +38,7 @@ void MainController::mainLoop(){
             this->updateState();
         break;
     case RobotState::AIM_FOR_BEACON:
+        RCLCPP_DEBUG(this->get_logger(), "aim for beacon");
         if(this->turnToBeacon())
             this->updateState();
         break;
@@ -144,7 +146,6 @@ void MainController::obstacleAvoidance(){
     RCLCPP_DEBUG(this->get_logger(), "finished arma operations obstacle avoidance");
 
     this->sendCommand(static_cast<int8_t>(motorInputs(0)), static_cast<int8_t>(motorInputs(1)));
-    
 }
 
 void MainController::updateState(){
@@ -171,6 +172,7 @@ void MainController::updateState(){
             RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted");
             break;
         }
+        return;
     }
 
     // normal pivotting state
@@ -185,6 +187,7 @@ void MainController::updateState(){
         break;
     default:
         state = RobotState::STRAIGHT_LINE;
+        RCLCPP_ERROR(this->get_logger(), "defaulted into unhandled state normally switching back to STRAIGHT_LINE");
         break;
     }
 }
