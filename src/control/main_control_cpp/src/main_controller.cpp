@@ -154,17 +154,21 @@ void MainController::updateState(){
     if(time > startTime + RETURN_TO_BASE_TIME){
         if (inArea){
             state = RobotState::DROP_OFF_LEGO;
+            RCLCPP_INFO(this->get_logger(), "about to get into state DROP_OFF_LEGO");
             return;
         }
         switch(state){
         case RobotState::AIM_FOR_BEACON:
             state = RobotState::STRAIGHT_LINE;
+            RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE");
             break;
         case RobotState::STRAIGHT_LINE:
             state = RobotState::AIM_FOR_BEACON;
+            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON");
             break;
         default:
             state = RobotState::AIM_FOR_BEACON;
+            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted");
             break;
         }
     }
@@ -173,9 +177,11 @@ void MainController::updateState(){
     switch(state){
     case RobotState::STRAIGHT_LINE:
         state = RobotState::AIM_FOR_LEGOS;
+        RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_LEGOS");
         break;
     case RobotState::AIM_FOR_LEGOS:
         state = RobotState::STRAIGHT_LINE;
+        RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE");
         break;
     default:
         state = RobotState::STRAIGHT_LINE;
