@@ -56,8 +56,6 @@ bool MainController::dropOffLego(){
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
     float time = steadyClock.now().seconds();
-    this->dropOffLego();
-    return;
     switch(state){
     case RobotState::STRAIGHT_LINE:
         RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
@@ -73,6 +71,11 @@ void MainController::mainLoop(){
         RCLCPP_DEBUG(this->get_logger(), "aim for beacon");
         if(this->turnToBeacon())
             this->updateState();
+        break;
+    case RobotState::DROP_OFF_LEGO:
+        if(this->dropOffLego()){
+            this->updateState();
+        }
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
