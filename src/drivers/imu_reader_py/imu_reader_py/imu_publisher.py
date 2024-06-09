@@ -9,14 +9,23 @@ from std_msgs.msg import Float32MultiArray
 from sensor_msgs.msg import Imu
 
 
-
 class IMUPub(Node):
+    GRAVITATIONAL_ACCELERATION = 9.81
+    PI = 3.14159265358979323846
+
     def __init__(self):
         super().__init__("IMU_pub")
-        self.__COVARIANCE_GYRO = np.diag([5.4732e-04, 6.1791e-04, 6.2090e-04])
-        self.__COVARIANCE_ACCEL = np.diag([2.8e-03, 2.5e-03, 3.8e-03])
+        # main covariance of the acceleration
+        main_cov_accel = np.full(
+            (4 * self.GRAVITATIONAL_ACCELERATION * 1e-3)**2, 3)
+        main_cov_giro = np.full((0.6 * self.PI / 180 * 1e-3)**2, 3)
+        # setting up all the params
+        self.__COVARIANCE_GYRO = np.diag(main_cov_giro)
+        self.__COVARIANCE_ACCEL = np.diag(main_cov_accel)
         self.publisher_ = self.create_publisher(Imu, 'robot/imu/value', 10)
+        # setting up the mpu with the right I2C address
         self.mpu = mpu6050.mpu6050(0x68)
+        # creating callback
         timer_period = 0.07
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
