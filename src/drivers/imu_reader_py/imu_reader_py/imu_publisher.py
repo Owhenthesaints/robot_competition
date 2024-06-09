@@ -36,7 +36,7 @@ class IMUPub(Node):
         # setup IMU values
         imu_msg = Imu()
         imu_msg.header.stamp = self.get_clock().now().to_msg()
-        imu_msg.header.frame_id="base_link"
+        imu_msg.header.frame_id="imu_sensor_link"
         # setup the imu accel values
         imu_msg.linear_acceleration.x = imu_accel['x']
         imu_msg.linear_acceleration.y = imu_accel['y']
