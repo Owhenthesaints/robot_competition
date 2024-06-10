@@ -35,7 +35,7 @@ def generate_launch_description():
         Node(
             package='rx_dispatcher',
             executable='rx_dispatcher',
-            namespace="",
+            namespace=LaunchConfiguration('namespace'),
             name = 'rx_dispatcher',
             shell =True,
             arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
