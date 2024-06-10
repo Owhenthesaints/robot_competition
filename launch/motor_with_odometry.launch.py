@@ -49,7 +49,7 @@ def generate_launch_description():
             arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
         ),
         Node(
-            package='imu_ready_py',
+            package='imu_reader_py',
             executable='imu_publisher',
             namespace="",
             name = 'imu_publisher',
