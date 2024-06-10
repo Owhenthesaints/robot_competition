@@ -31,7 +31,7 @@ inline bool MainController::carpet(){
 
 
 bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> instructions){
-    RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu'", startedInstructions? "true": "false", backingOutStep);
+    RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu' about to send '%d'", startedInstructions? "true": "false", backingOutStep, instructions[backingOutStep][0]);
     double time = steadyClock.now().seconds();
     if (!startedInstructions){
         startedInstructions = true;
@@ -67,8 +67,6 @@ bool MainController::dropOffLego(){
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
     float time = steadyClock.now().seconds();
-    this->dropOffLego();
-    return;
     switch(state){
     case RobotState::STRAIGHT_LINE:
         RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
@@ -201,6 +199,10 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::updateState(){
+    if (carpet()){
+        state = RobotState::TURN_AWAY_FROM_CARPET;
+        return;
+    }
     double time = steadyClock.now().seconds();
     lastStepChange = steadyClock.now().seconds();
     // returning to base
@@ -294,6 +296,5 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
             countTracker[i] = 0;
             activatedSensors[i] = false;
         }
-        RCLCPP_DEBUG(this->get_logger(), "in iteration %zu, value inside sensor %u", i, distanceSensors[i]);
     }
 }
