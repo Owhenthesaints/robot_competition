@@ -20,12 +20,18 @@ def generate_launch_description():
         default_value='INFO',
         description='Log level for the nodes'
     )
+    namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='robot1',  # Default namespace
+        description='Namespace for the robot'
+    )
     open_terminal_and_close()
 
     time.sleep(2)
 
     return LaunchDescription([
         log_level_arg,
+        namespace_arg,
         Node(
             package='rx_dispatcher',
             executable='rx_dispatcher',
