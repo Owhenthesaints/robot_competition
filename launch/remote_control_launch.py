@@ -2,19 +2,37 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 import subprocess
 import time
-import os
+
+def open_terminal_and_close():
+    # Command to run in the terminal
+    command = 'timeout 4s pio device monitor;exit;'
+    
+    # Open gnome-terminal and run the command
+    subprocess.Popen(command, shell=True)
+
 
 
 def generate_launch_description():
-    child_launch_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'motor_control_launch.py')
+    log_level_arg = DeclareLaunchArgument(
+        'log_level',
+        default_value='INFO',
+        description='Log level for the nodes'
+    )
+    open_terminal_and_close()
+
+    time.sleep(2)
 
     return LaunchDescription([
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(child_launch_dir)
+        log_level_arg,
+        Node(
+            package='rx_dispatcher',
+            executable='rx_dispatcher',
+            namespace="",
+            name = 'rx_dispatcher',
+            shell =True,
+            arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
         ),
         Node(
             package='joy_override_cpp',
@@ -23,5 +41,3 @@ def generate_launch_description():
             name='control_override_joy',
         ),
     ])
-
-
