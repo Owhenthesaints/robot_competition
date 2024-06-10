@@ -8,7 +8,8 @@
 #include <armadillo>
 
 
-MainController::MainController() : rclcpp::Node("main_controller"), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds())
+MainController::MainController() : rclcpp::Node("main_controller"),  backingOutInstruction({std::array<int8_t, 3>({-50, -50, 5}),
+                        std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds())
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -21,6 +22,35 @@ MainController::MainController() : rclcpp::Node("main_controller"), started(true
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), [this](){ this->mainLoop(); });
     RCLCPP_DEBUG(this->get_logger(), "successfully initiated");
     lastStepChange = steadyClock.now().seconds();
+}
+
+/**
+ * @brief a function that follows a of predefined instructions to drop off the legos
+ */
+bool MainController::dropOffLego(){
+    RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu'", startedInstructions? "true": "false", backingOutStep);
+    double time = steadyClock.now().seconds();
+    if (!startedInstructions){
+        startedInstructions = true;
+        backingOutLastStepTime = steadyClock.now().seconds();
+    }
+    else if (backingOutStep >= backingOutInstruction.size()){
+        backingOutStep = 0;
+        startedInstructions = false;
+        return true;
+    }
+
+    // if instruction has not expired
+    if(static_cast<double>(backingOutInstruction[backingOutStep][2]) + backingOutLastStepTime > time){
+        this->sendCommand(backingOutInstruction[backingOutStep][0], backingOutInstruction[backingOutStep][1]);
+        RCLCPP_DEBUG(this->get_logger(), "status of time to go to next instruction in backing off '%s'", 
+                    backingOutInstruction[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
+    }
+    else{
+        backingOutStep ++;
+        backingOutLastStepTime = steadyClock.now().seconds();
+    }
+    return false;
 }
 
 void MainController::mainLoop(){
@@ -41,6 +71,11 @@ void MainController::mainLoop(){
         RCLCPP_DEBUG(this->get_logger(), "aim for beacon");
         if(this->turnToBeacon())
             this->updateState();
+        break;
+    case RobotState::DROP_OFF_LEGO:
+        if(this->dropOffLego()){
+            this->updateState();
+        }
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -169,7 +204,7 @@ void MainController::updateState(){
             break;
         default:
             state = RobotState::AIM_FOR_BEACON;
-            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted");
+            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted state is '%d'", static_cast<int>(state));
             break;
         }
         return;
@@ -201,7 +236,6 @@ void MainController::slowTurn(bool left){
             this->sendCommand(-30, 30); // turn left
         else
             this->sendCommand(30, -30); // turn right
-
         lastCommandHigh++;
     }
 }

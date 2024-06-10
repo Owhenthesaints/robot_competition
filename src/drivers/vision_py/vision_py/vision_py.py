@@ -23,7 +23,7 @@ class DetectorNode(Node):
     MIN_HEIGHT = 40
     MAX_WIDTH = 30
 
-    def __init__(self, model_name, graph_name, labelmap_name, min_thresh = 0.8, timer_period_legos=0.2, timer_period_beacons=0.1, use_TPU=False):
+    def __init__(self, model_name, graph_name, labelmap_name, min_thresh = 0.8, timer_period_legos=0.2, timer_period_beacons=0.1, timer_period_carpet=0.3, use_TPU=False):
         # ROS stuff
         super().__init__("lego_detector")
         # declare parameters
@@ -36,6 +36,9 @@ class DetectorNode(Node):
         # declare callback and create publisher for beacons
         self._beacon_timer = self.create_timer(timer_period_beacons, self.find_purple_beacon)
         self._beacon_publisher = self.create_publisher(BoundingBox2D, 'robot/camera/purple_beacon', 10)
+        # declare callback to know if carpet in front
+        self._carpet_timer = self.create_timer(timer_period_carpet, self.find_carpet)
+        self._carpet_publisher = self.create_publisher(BoundingBox2D, 'robot/camera/carpet', 10);
 
         ### Vision
         # lego model
@@ -116,6 +119,12 @@ class DetectorNode(Node):
         self.MAX_INTENSITY = 255
         self.MIN_COLORS = (min_blue, min_green, min_red)
         self.MAX_COLORS = (max_blue, max_green, max_red)
+
+        # carpet
+        self.MIN_AREA = 5000
+        self.LOWER_VIOLET = [95, 94, 87]
+        self.UPPER_VIOLET = [179, 179, 255]
+
 
 
     def release_cap(self):
@@ -221,6 +230,8 @@ class DetectorNode(Node):
         hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         gray_scale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        self.get_logger().info("in find_purple_beacon callback")
+
 
         mask = cv2.inRange(hsv_img, self.MIN_COLORS, self.MAX_COLORS)
         
@@ -265,6 +276,47 @@ class DetectorNode(Node):
                 cv2.imshow("becon detector", color_img)
                 cv2.waitKey(1)
             break
+    
+    def find_carpet(self):
+        ret, frame = self.video_capture.read()
+        if not ret:
+            self.get_logger().error("did not manage to read frame")
+            return
+
+        # Apply Gaussian blur to the frame to reduce noise
+        blurred_frame = cv2.GaussianBlur(frame, (5, 5), 0)
+
+        # Convert the blurred image to HSV color space
+        hsv = cv2.cvtColor(blurred_frame, cv2.COLOR_BGR2HSV)
+
+        # Define the range for violet color in HSV space
+        lower_violet = np.array(self.LOWER_VIOLET)
+        upper_violet = np.array(self.UPPER_VIOLET)
+
+        # Threshold the HSV image to get only violet colors
+        mask = cv2.inRange(hsv, lower_violet, upper_violet)
+
+        # Find contours in the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Draw bounding box around the largest violet object
+        if contours:
+            largest_contour = max(contours, key=cv2.contourArea)
+            area = cv2.contourArea(largest_contour)
+            if area > self.MIN_AREA:
+                x, y, w, h = cv2.boundingRect(largest_contour)
+                if self._UI:
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 255), 2)  # Violet color
+                msg = BoundingBox2D()
+                msg.center.position.x = float(x+w/2)
+                msg.center.position.y = float(y+h/2)
+                msg.size_x = float(w)
+                msg.size_y = float(h)
+                msg.center.theta = float(0)
+                self._carpet_publisher.publish(msg)
+                if self._UI:
+                    cv2.imshow('Violet Beacon Detection', frame)
+                return
 
 
     def __del__(self):

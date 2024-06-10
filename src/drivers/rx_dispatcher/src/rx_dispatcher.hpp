@@ -2,7 +2,7 @@
 #define RX_DISPATCHER_HPP
 
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <algorithm>
 #include <numbers>
 #include <vector>
@@ -14,7 +14,7 @@
 #define ROBOT_WIDTH 0.357     // m
 #define ROBOT_WIDTH_2 0.34    // m
 #define DIAMETER_WHEEL 0.1142 // m
-#define ONEHUNDRED_TO_RPM 2060
+#define ONEHUNDRED_TO_RPM 4000
 #define REDUCTION_RATIO 60
 #define PWM_CUTOFF 28
 //
@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    using speedPublisherType = geometry_msgs::msg::TwistWithCovarianceStamped;
+    using speedPublisherType = nav_msgs::msg::Odometry;
     void timer_callback() {
         if (attribute_values()) {
             publishDistSensors();
@@ -138,7 +138,8 @@ private:
     {
         auto msg = speedPublisherType();
         msg.header.stamp = this->get_clock()->now();
-        msg.header.frame_id = "base_link";
+        msg.header.frame_id = "odom";
+        msg.child_frame_id = "base_link";
         // Check if the motors are above arduino cutoff
         int16_t left = static_cast<int16_t>(motorArray_[0]>PWM_CUTOFF || motorArray_[0]< -PWM_CUTOFF? motorArray_[0]: 0);
         int16_t right = static_cast<int16_t>(motorArray_[1]>PWM_CUTOFF || motorArray_[1]< -PWM_CUTOFF? motorArray_[1]: 0);
@@ -147,13 +148,14 @@ private:
         msg.twist.twist.linear.x = DIAMETER_WHEEL / 2 * WHEEL_SPEED_CONVERSION_TO_RAD * ((left + right) / (double)2); // get the speed of the motor
         msg.twist.twist.linear.y = 0;
         msg.twist.twist.linear.z = 0;
+        // these are the value of group 2 from last year
         msg.twist.covariance = std::array<double, 36>({
-            0.04, 0, 0, 0, 0, 0,    // Variance in x (0.05^2)
-            0, 0.02, 0, 0, 0, 0,    // Variance in y (0.05^2)
-            0, 0, 0.02, 0, 0, 0,    // Variance in z (0.01^2)
-            0, 0, 0, 0.02, 0.02, 0, // Variance in roll (0.01^2)
-            0, 0, 0, 0, 0.04, 0,    // Variance in pitch (0.01^2)
-            0, 0, 0, 0, 0, 0.04     // Variance in yaw (0.02^2)
+            0.05, 0, 0, 0, 0, 0,    // Variance in x (0.05^2)
+            0, 0.05, 0, 0, 0, 0,    // Variance in y (0.05^2)
+            0, 0, 0.05, 0, 0, 0,    // Variance in z (0.01^2)
+            0, 0, 0, 0.1, 0, 0, // Variance in roll (0.01^2)
+            0, 0, 0, 0, 0.1, 0,    // Variance in pitch (0.01^2)
+            0, 0, 0, 0, 0, 0.1     // Variance in yaw (0.02^2)
         });
         speedPublisher_->publish(msg);
     }
@@ -180,7 +182,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     std::shared_ptr<rclcpp::Publisher<DistSensorPub>> distPublisher_;
     std::shared_ptr<rclcpp::Subscription<RotorControlSub>> rotorSubscription_;
-    std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>> speedPublisher_;
+    std::shared_ptr<rclcpp::Publisher<speedPublisherType>> speedPublisher_;
     std::unique_ptr<uint8_t[]> stored_values;
     LibSerial::SerialPort serial;
     const size_t ms_timeout;

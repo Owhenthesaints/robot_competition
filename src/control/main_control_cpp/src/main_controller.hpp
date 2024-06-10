@@ -16,7 +16,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
 #define MIDDLE_FRAME 750
-#define THRESHOLD_MIDDLE 100
+#define THRESHOLD_MIDDLE 50
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
 #define BEACON_LOST_TIME 1
@@ -27,7 +27,7 @@
 #define LAST_HIGH_PWM 2
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
-#define TIME_TO_GO_STRAIGHT 10
+#define TIME_TO_GO_STRAIGHT 5
 
 enum class RobotState {
     STRAIGHT_LINE,
@@ -50,6 +50,7 @@ private:
     using purpleBeaconType = vision_msgs::msg::BoundingBox2D;
     void pathing();
     bool turnToBeacon();
+    bool dropOffLego();
     bool turnToLego();
     /**
      * @brief get the positions of lego bricks
@@ -84,6 +85,10 @@ private:
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
     std::array<uint8_t, NUM_DIST_SENSORS> countTracker = {0, 0, 0, 0, 0};
     std::array<double, 2> beaconPosition = {0, 0};
+    std::vector<std::array<int8_t, 3>> backingOutInstruction;
+    size_t backingOutStep = 0;
+    double backingOutLastStepTime = 0;
+    bool startedInstructions = false;
     bool inArea = false;
     double foundBeaconTime = NO_TIME;
     bool started = true;
@@ -91,7 +96,7 @@ private:
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Clock steadyClock;
-    float lastStepChange=0;
+    double lastStepChange=0;
     unsigned int lastCommandHigh = 0;
     const double startTime = 0;
 };
