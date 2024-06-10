@@ -28,6 +28,7 @@
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
 #define TIME_TO_GO_STRAIGHT 5
+#define MIN_CARPET_SIZE_X 500
 
 enum class RobotState {
     STRAIGHT_LINE,

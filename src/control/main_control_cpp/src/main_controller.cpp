@@ -48,7 +48,7 @@ bool MainController::dropOffLego(){
                     backingOutInstruction[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
     }
     else{
-        backingOutStep ++;
+        backingOutStep++;
         backingOutLastStepTime = steadyClock.now().seconds();
     }
     return false;
@@ -254,7 +254,9 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
 }
 
 void MainController::carpetCallback(const carpetType::SharedPtr msg){
-    foundCarpetTime = steadyClock.now().seconds();
+    if (MIN_CARPET_SIZE_X < msg->size_x){
+        foundCarpetTime = steadyClock.now().seconds();
+    }
 }
 
 void MainController::distanceCallback(const distanceType::SharedPtr msg)
