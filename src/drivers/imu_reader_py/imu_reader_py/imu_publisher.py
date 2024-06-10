@@ -16,12 +16,11 @@ class IMUPub(Node):
     def __init__(self):
         super().__init__("IMU_pub")
         # main covariance of the acceleration
-        main_cov_accel = np.full(
-            (4 * self.GRAVITATIONAL_ACCELERATION * 1e-3)**2, 3)
-        main_cov_giro = np.full((0.6 * self.PI / 180 * 1e-3)**2, 3)
+        main_cov_accel = (4 * self.GRAVITATIONAL_ACCELERATION * 1e-3)**2
+        main_cov_giro = (0.6 * self.PI / 180 * 1e-3)**2
         # setting up all the params
-        self.__COVARIANCE_GYRO = np.diag(main_cov_giro)
-        self.__COVARIANCE_ACCEL = np.diag(main_cov_accel)
+        self.__COVARIANCE_GYRO = np.diag([main_cov_giro, main_cov_giro, main_cov_giro])
+        self.__COVARIANCE_ACCEL = np.diag([main_cov_accel, main_cov_accel, main_cov_accel])
         self.publisher_ = self.create_publisher(Imu, 'robot/imu/value', 10)
         # setting up the mpu with the right I2C address
         self.mpu = mpu6050.mpu6050(0x68)

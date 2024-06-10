@@ -27,7 +27,7 @@
 #define LAST_HIGH_PWM 2
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
-#define TIME_TO_GO_STRAIGHT 10
+#define TIME_TO_GO_STRAIGHT 5
 
 enum class RobotState {
     STRAIGHT_LINE,
