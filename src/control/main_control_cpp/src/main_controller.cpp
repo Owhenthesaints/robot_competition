@@ -204,7 +204,7 @@ void MainController::updateState(){
             break;
         default:
             state = RobotState::AIM_FOR_BEACON;
-            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted");
+            RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted state is '%d'", static_cast<int>(state));
             break;
         }
         return;
@@ -236,7 +236,6 @@ void MainController::slowTurn(bool left){
             this->sendCommand(-30, 30); // turn left
         else
             this->sendCommand(30, -30); // turn right
-
         lastCommandHigh++;
     }
 }
