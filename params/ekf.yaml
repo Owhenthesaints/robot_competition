@@ -1,4 +1,3 @@
-### this param file has been taken from last years group 2
 ### ekf config file ###
 ekf_filter_node:
     ros__parameters:
