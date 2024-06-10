@@ -48,10 +48,11 @@ private:
     using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     using purpleBeaconType = vision_msgs::msg::BoundingBox2D;
-    void pathing();
+    using carpetType = purpleBeaconType;
     bool turnToBeacon();
     bool dropOffLego();
     bool turnToLego();
+    void carpetCallback(const carpetType::SharedPtr msg);
     /**
      * @brief get the positions of lego bricks
     */
@@ -80,6 +81,7 @@ private:
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
+    std::shared_ptr<rclcpp::Subscription<carpetType>> carpetSub;
     std::vector<std::array<int, 2>> legoPositions;
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
@@ -92,6 +94,7 @@ private:
     bool inArea = false;
     double foundBeaconTime = NO_TIME;
     bool started = true;
+    double foundCarpetTime = NO_TIME;
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;

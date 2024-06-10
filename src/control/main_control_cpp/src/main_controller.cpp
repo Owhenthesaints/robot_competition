@@ -16,6 +16,7 @@ MainController::MainController() : rclcpp::Node("main_controller"),  backingOutI
                                                                  { this->legoDetectionCallback(msg); });
     distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10,
                                                                             std::bind(&MainController::distanceCallback, this, std::placeholders::_1));
+    carpetSub = this->create_subscription<carpetType>("robot/camera/carpet", 10, [this](const carpetType::SharedPtr msg){ this->carpetCallback(msg);});
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
     baseBeaconSub = this->create_subscription<purpleBeaconType>("robot/camera/purple_beacon", 10,
                                                         [this](const purpleBeaconType::SharedPtr msg){this->purpleBeaconCallback(msg);});
@@ -250,6 +251,10 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
             legoPositions.push_back(std::array<int, 2>({static_cast<int>(msg->boxes[i].center.position.x), static_cast<int>(msg->boxes[i].center.position.y)}));
         }
     }
+}
+
+void MainController::carpetCallback(const carpetType::SharedPtr msg){
+    foundCarpetTime = steadyClock.now().seconds();
 }
 
 void MainController::distanceCallback(const distanceType::SharedPtr msg)
