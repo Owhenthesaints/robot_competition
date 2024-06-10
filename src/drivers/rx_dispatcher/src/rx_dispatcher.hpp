@@ -2,7 +2,7 @@
 #define RX_DISPATCHER_HPP
 
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <algorithm>
 #include <numbers>
 #include <vector>
@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    using speedPublisherType = geometry_msgs::msg::TwistWithCovarianceStamped;
+    using speedPublisherType = nav_msgs::msg::Odometry;
     void timer_callback() {
         if (attribute_values()) {
             publishDistSensors();
@@ -139,6 +139,7 @@ private:
         auto msg = speedPublisherType();
         msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "odom";
+        msg.child_frame_id = "base_link";
         // Check if the motors are above arduino cutoff
         int16_t left = static_cast<int16_t>(motorArray_[0]>PWM_CUTOFF || motorArray_[0]< -PWM_CUTOFF? motorArray_[0]: 0);
         int16_t right = static_cast<int16_t>(motorArray_[1]>PWM_CUTOFF || motorArray_[1]< -PWM_CUTOFF? motorArray_[1]: 0);
@@ -181,7 +182,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     std::shared_ptr<rclcpp::Publisher<DistSensorPub>> distPublisher_;
     std::shared_ptr<rclcpp::Subscription<RotorControlSub>> rotorSubscription_;
-    std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>> speedPublisher_;
+    std::shared_ptr<rclcpp::Publisher<speedPublisherType>> speedPublisher_;
     std::unique_ptr<uint8_t[]> stored_values;
     LibSerial::SerialPort serial;
     const size_t ms_timeout;
