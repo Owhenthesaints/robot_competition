@@ -29,12 +29,14 @@
 #define TIME_TO_DETECT_BEACON 20
 #define TIME_TO_GO_STRAIGHT 5
 #define MIN_CARPET_SIZE_X 500
+#define TIME_FORGET_CARPET 1 // seconds
 
 enum class RobotState {
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
     AIM_FOR_BEACON,
     DROP_OFF_LEGO,
+    TURN_AWAY_FROM_CARPET,
 };
 
 class MainController : public rclcpp::Node {
@@ -51,6 +53,8 @@ private:
     using purpleBeaconType = vision_msgs::msg::BoundingBox2D;
     using carpetType = purpleBeaconType;
     bool turnToBeacon();
+    bool carpet();
+    bool ninetyDegree();
     bool dropOffLego();
     bool turnToLego();
     void carpetCallback(const carpetType::SharedPtr msg);
@@ -62,6 +66,7 @@ private:
      * @brief get the values of the distance sensors
     */
     void distanceCallback(const distanceType::SharedPtr msg);
+    bool followInstructionSet(std::vector<std::array<int8_t, 3>> instructions);
     /**
      * @brief update the states
     */
@@ -103,6 +108,8 @@ private:
     double lastStepChange=0;
     unsigned int lastCommandHigh = 0;
     const double startTime = 0;
+    double ninetyDegreeStartTime = 0;
+    bool ninetyDegreeBool;
 };
 
 

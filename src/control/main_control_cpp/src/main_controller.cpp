@@ -25,27 +25,29 @@ MainController::MainController() : rclcpp::Node("main_controller"),  backingOutI
     lastStepChange = steadyClock.now().seconds();
 }
 
-/**
- * @brief a function that follows a of predefined instructions to drop off the legos
- */
-bool MainController::dropOffLego(){
+inline bool MainController::carpet(){
+    return foundCarpetTime + TIME_FORGET_CARPET > steadyClock.now().seconds();
+}
+
+
+bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> instructions){
     RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu'", startedInstructions? "true": "false", backingOutStep);
     double time = steadyClock.now().seconds();
     if (!startedInstructions){
         startedInstructions = true;
         backingOutLastStepTime = steadyClock.now().seconds();
     }
-    else if (backingOutStep >= backingOutInstruction.size()){
+    else if (backingOutStep >= instructions.size()){
         backingOutStep = 0;
         startedInstructions = false;
         return true;
     }
 
     // if instruction has not expired
-    if(static_cast<double>(backingOutInstruction[backingOutStep][2]) + backingOutLastStepTime > time){
-        this->sendCommand(backingOutInstruction[backingOutStep][0], backingOutInstruction[backingOutStep][1]);
+    if(static_cast<double>(instructions[backingOutStep][2]) + backingOutLastStepTime > time){
+        this->sendCommand(instructions[backingOutStep][0], instructions[backingOutStep][1]);
         RCLCPP_DEBUG(this->get_logger(), "status of time to go to next instruction in backing off '%s'", 
-                    backingOutInstruction[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
+                    instructions[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
     }
     else{
         backingOutStep++;
@@ -54,9 +56,19 @@ bool MainController::dropOffLego(){
     return false;
 }
 
+
+/**
+ * @brief a function that follows a of predefined instructions to drop off the legos
+ */
+bool MainController::dropOffLego(){
+    return this->followInstructionSet(backingOutInstruction);
+}
+
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
     float time = steadyClock.now().seconds();
+    this->dropOffLego();
+    return;
     switch(state){
     case RobotState::STRAIGHT_LINE:
         RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
@@ -114,6 +126,10 @@ bool MainController::turnToBeacon() {
         this->slowTurn(true);
     }
     return false;
+}
+
+bool MainController::ninetyDegree(){
+    return followInstructionSet({std::array<int8_t, 3>({30, -30, 3})});
 }
 
 bool MainController::turnToLego()
