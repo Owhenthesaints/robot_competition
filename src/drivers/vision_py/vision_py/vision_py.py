@@ -109,13 +109,13 @@ class DetectorNode(Node):
             self.frame_rate_calc = 1
         
         # beacon model
-        min_blue = 90
-        min_green = 1
-        min_red = 255
-        max_blue = 150
-        max_green = 4
+        min_blue = 122
+        min_green = 6
+        min_red = 233
+        max_blue = 166
+        max_green = 51
         max_red = 255
-        self.MIN_INTENSITY = 250
+        self.MIN_INTENSITY = 200
         self.MAX_INTENSITY = 255
         self.MIN_COLORS = (min_blue, min_green, min_red)
         self.MAX_COLORS = (max_blue, max_green, max_red)
