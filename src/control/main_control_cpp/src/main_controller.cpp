@@ -88,6 +88,10 @@ void MainController::mainLoop(){
             this->updateState();
         }
         break;
+    case RobotState::TURN_AWAY_FROM_CARPET:
+        if(this->ninetyDegree())
+            this->updateState();
+        break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
         break;
