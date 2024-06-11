@@ -227,15 +227,16 @@ inline bool MainController::isInArea(){
 }
 
 void MainController::updateState(){
+    double time = steadyClock.now().seconds();
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
-    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY))){
+    bool returnToBase = time > startTime + RETURN_TO_BASE_TIME;
+    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY) || !returnToBase)){
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
     }
-    double time = steadyClock.now().seconds();
     lastStepChange = steadyClock.now().seconds();
     // returning to base
-    if(time > startTime + RETURN_TO_BASE_TIME){
+    if(returnToBase){
         if (isInArea() && !dropOffLegoDone){
             state = RobotState::DROP_OFF_LEGO;
             dropOffLegoDone = true;
