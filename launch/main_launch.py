@@ -40,6 +40,20 @@ def generate_launch_description():
             shell =True,
             arguments=['--ros-args', '--log-level', LaunchConfiguration('log_level')]
         ),
+        Node(
+            package='vision_py',
+            executable='camera_node',
+            namespace=LaunchConfiguration('namespace'),
+            name='camera_node',
+            output='screen'
+        ),
+        Node(
+            package='main_control_cpp',
+            executable='main_control_cpp',
+            namespace=LaunchConfiguration('namespace'),
+            name='main_control_cpp',
+            output='screen'
+        ),
     ])
 
 
