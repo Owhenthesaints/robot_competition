@@ -57,7 +57,7 @@ bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> ins
 }
 
 bool MainController::choreography(){
-    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 5}), std::array<int8_t, 3>({-30, 30, 3})});
+    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 8})});
 }
 
 
@@ -77,6 +77,7 @@ void MainController::mainLoop(){
         if(this->choreography())
             this->updateState();
         break;
+    case RobotState::STRAIGHT_LINE_NO_CARPET:
     case RobotState::STRAIGHT_LINE:
         RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
         this->obstacleAvoidance();
@@ -227,7 +228,7 @@ inline bool MainController::isInArea(){
 
 void MainController::updateState(){
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
-    if (carpet()){
+    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET))){
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
     }
@@ -281,6 +282,13 @@ void MainController::updateState(){
     case RobotState::CHOREOGRAPHY:
         state = RobotState::STRAIGHT_LINE;
         RCLCPP_INFO(this->get_logger(), "from CHOREOGRAPHY about to go to STRAIGHT_LINE");
+        break;
+    case RobotState::STRAIGHT_LINE_NO_CARPET:
+        if(!carpet())
+            state = RobotState::STRAIGHT_LINE;
+        else
+            state = RobotState::STRAIGHT_LINE_NO_CARPET;
+        RCLCPP_INFO(this->get_logger(), "from STRAIGHT_LINE_NO_CARPET to STRAIGHT_LINE");
         break;
     default:
         state = RobotState::STRAIGHT_LINE;

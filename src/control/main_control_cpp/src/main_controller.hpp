@@ -36,6 +36,7 @@
 
 enum class RobotState {
     CHOREOGRAPHY,
+    STRAIGHT_LINE_NO_CARPET,
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
     AIM_FOR_BEACON,
