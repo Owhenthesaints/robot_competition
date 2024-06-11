@@ -28,12 +28,16 @@
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
 #define TIME_TO_GO_STRAIGHT 5
+#define MIN_CARPET_SIZE_X 500
+#define TIME_FORGET_CARPET 1 // seconds
+#define MIN_HEIGHT_CARPET 250
 
 enum class RobotState {
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
     AIM_FOR_BEACON,
     DROP_OFF_LEGO,
+    TURN_AWAY_FROM_CARPET,
 };
 
 class MainController : public rclcpp::Node {
@@ -48,10 +52,13 @@ private:
     using distanceType = std_msgs::msg::UInt8MultiArray;
     using motorType = example_interfaces::msg::Int8MultiArray;
     using purpleBeaconType = vision_msgs::msg::BoundingBox2D;
-    void pathing();
+    using carpetType = purpleBeaconType;
     bool turnToBeacon();
+    bool carpet();
+    bool ninetyDegree();
     bool dropOffLego();
     bool turnToLego();
+    void carpetCallback(const carpetType::SharedPtr msg);
     /**
      * @brief get the positions of lego bricks
     */
@@ -60,6 +67,7 @@ private:
      * @brief get the values of the distance sensors
     */
     void distanceCallback(const distanceType::SharedPtr msg);
+    bool followInstructionSet(std::vector<std::array<int8_t, 3>> instructions);
     /**
      * @brief update the states
     */
@@ -80,6 +88,7 @@ private:
     std::shared_ptr<rclcpp::Subscription<legoVisionType>> legoSubscription;
     std::shared_ptr<rclcpp::Subscription<distanceType>> distanceSensorSubscription;
     std::shared_ptr<rclcpp::Publisher<motorType>> motorCommandSender;
+    std::shared_ptr<rclcpp::Subscription<carpetType>> carpetSub;
     std::vector<std::array<int, 2>> legoPositions;
     std::array<uint8_t, NUM_DIST_SENSORS> distanceSensors = {100, 100, 100, 100, 100};
     std::array<bool, NUM_DIST_SENSORS> activatedSensors = {false, false, false, false, false};
@@ -92,13 +101,17 @@ private:
     bool inArea = false;
     double foundBeaconTime = NO_TIME;
     bool started = true;
+    double foundCarpetTime = NO_TIME;
     std::vector<legoVisionType> legoVision;
     RobotState state = RobotState::STRAIGHT_LINE;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Clock steadyClock;
     double lastStepChange=0;
     unsigned int lastCommandHigh = 0;
-    const double startTime = 0;
+    double startTime = 0;
+    double ninetyDegreeStartTime = 0;
+    bool ninetyDegreeBool;
+    bool dropOffLegoDone = false;
 };
 
 

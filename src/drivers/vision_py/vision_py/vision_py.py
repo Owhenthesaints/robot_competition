@@ -230,9 +230,6 @@ class DetectorNode(Node):
         hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         gray_scale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        self.get_logger().info("in find_purple_beacon callback")
-
-
         mask = cv2.inRange(hsv_img, self.MIN_COLORS, self.MAX_COLORS)
         
         mask2 = cv2.inRange(gray_scale, self.MIN_INTENSITY, self.MAX_INTENSITY)

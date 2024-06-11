@@ -9,13 +9,14 @@
 
 
 MainController::MainController() : rclcpp::Node("main_controller"),  backingOutInstruction({std::array<int8_t, 3>({-50, -50, 5}),
-                        std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds())
+                        std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds()), dropOffLegoDone(false)
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
                                                                  { this->legoDetectionCallback(msg); });
     distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10,
                                                                             std::bind(&MainController::distanceCallback, this, std::placeholders::_1));
+    carpetSub = this->create_subscription<carpetType>("robot/camera/carpet", 10, [this](const carpetType::SharedPtr msg){ this->carpetCallback(msg);});
     motorCommandSender = this->create_publisher<motorType>("motor_updates/direction", 10);
     baseBeaconSub = this->create_subscription<purpleBeaconType>("robot/camera/purple_beacon", 10,
                                                         [this](const purpleBeaconType::SharedPtr msg){this->purpleBeaconCallback(msg);});
@@ -24,33 +25,43 @@ MainController::MainController() : rclcpp::Node("main_controller"),  backingOutI
     lastStepChange = steadyClock.now().seconds();
 }
 
-/**
- * @brief a function that follows a of predefined instructions to drop off the legos
- */
-bool MainController::dropOffLego(){
-    RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu'", startedInstructions? "true": "false", backingOutStep);
+inline bool MainController::carpet(){
+    return foundCarpetTime + TIME_FORGET_CARPET > steadyClock.now().seconds();
+}
+
+
+bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> instructions){
+    RCLCPP_DEBUG(this->get_logger(), "in drop off Lego, started instruction is '%s' and in step '%zu' about to send '%d'", startedInstructions? "true": "false", backingOutStep, instructions[backingOutStep][0]);
     double time = steadyClock.now().seconds();
     if (!startedInstructions){
         startedInstructions = true;
         backingOutLastStepTime = steadyClock.now().seconds();
     }
-    else if (backingOutStep >= backingOutInstruction.size()){
+    else if (backingOutStep >= instructions.size()){
         backingOutStep = 0;
         startedInstructions = false;
         return true;
     }
 
     // if instruction has not expired
-    if(static_cast<double>(backingOutInstruction[backingOutStep][2]) + backingOutLastStepTime > time){
-        this->sendCommand(backingOutInstruction[backingOutStep][0], backingOutInstruction[backingOutStep][1]);
+    if(static_cast<double>(instructions[backingOutStep][2]) + backingOutLastStepTime > time){
+        this->sendCommand(instructions[backingOutStep][0], instructions[backingOutStep][1]);
         RCLCPP_DEBUG(this->get_logger(), "status of time to go to next instruction in backing off '%s'", 
-                    backingOutInstruction[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
+                    instructions[backingOutStep][2] + backingOutLastStepTime < time? "true": "false");
     }
     else{
-        backingOutStep ++;
+        backingOutStep++;
         backingOutLastStepTime = steadyClock.now().seconds();
     }
     return false;
+}
+
+
+/**
+ * @brief a function that follows a of predefined instructions to drop off the legos
+ */
+bool MainController::dropOffLego(){
+    return this->followInstructionSet(backingOutInstruction);
 }
 
 void MainController::mainLoop(){
@@ -76,6 +87,10 @@ void MainController::mainLoop(){
         if(this->dropOffLego()){
             this->updateState();
         }
+        break;
+    case RobotState::TURN_AWAY_FROM_CARPET:
+        if(this->ninetyDegree())
+            this->updateState();
         break;
     default:
         RCLCPP_ERROR(this->get_logger(), "Pipeline error non existant state");
@@ -113,6 +128,10 @@ bool MainController::turnToBeacon() {
         this->slowTurn(true);
     }
     return false;
+}
+
+bool MainController::ninetyDegree(){
+    return followInstructionSet({std::array<int8_t, 3>({30, -30, 3})});
 }
 
 bool MainController::turnToLego()
@@ -184,12 +203,18 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::updateState(){
+    RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
+    if (carpet()){
+        state = RobotState::TURN_AWAY_FROM_CARPET;
+        return;
+    }
     double time = steadyClock.now().seconds();
     lastStepChange = steadyClock.now().seconds();
     // returning to base
     if(time > startTime + RETURN_TO_BASE_TIME){
-        if (inArea){
+        if (inArea && !dropOffLegoDone){
             state = RobotState::DROP_OFF_LEGO;
+            dropOffLegoDone = true;
             RCLCPP_INFO(this->get_logger(), "about to get into state DROP_OFF_LEGO");
             return;
         }
@@ -201,6 +226,12 @@ void MainController::updateState(){
         case RobotState::STRAIGHT_LINE:
             state = RobotState::AIM_FOR_BEACON;
             RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON");
+            break;
+        case RobotState::DROP_OFF_LEGO:
+            state = RobotState::STRAIGHT_LINE;
+            dropOffLegoDone = false;
+            RCLCPP_INFO(this->get_logger(), "dropped off legos");
+            startTime = steadyClock.now().seconds();
             break;
         default:
             state = RobotState::AIM_FOR_BEACON;
@@ -219,6 +250,10 @@ void MainController::updateState(){
     case RobotState::AIM_FOR_LEGOS:
         state = RobotState::STRAIGHT_LINE;
         RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE");
+        break;
+    case RobotState::TURN_AWAY_FROM_CARPET:
+        state = RobotState::STRAIGHT_LINE;
+        RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE from TURN_AWAY_FROM_CARPET");
         break;
     default:
         state = RobotState::STRAIGHT_LINE;
@@ -252,6 +287,12 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
     }
 }
 
+void MainController::carpetCallback(const carpetType::SharedPtr msg){
+    if ((MIN_CARPET_SIZE_X < msg->size_x) && (MIN_HEIGHT_CARPET < msg->center.position.y)){
+        foundCarpetTime = steadyClock.now().seconds();
+    }
+}
+
 void MainController::distanceCallback(const distanceType::SharedPtr msg)
 {
     // Simple code to descide to reduce noise it asks if the captors have had detection three times in a row
@@ -271,6 +312,5 @@ void MainController::distanceCallback(const distanceType::SharedPtr msg)
             countTracker[i] = 0;
             activatedSensors[i] = false;
         }
-        RCLCPP_DEBUG(this->get_logger(), "in iteration %zu, value inside sensor %u", i, distanceSensors[i]);
     }
 }
