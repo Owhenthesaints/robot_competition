@@ -22,7 +22,7 @@
 #define BEACON_LOST_TIME 1
 #define MIDDLE_BEACON 400
 #define BEACON_THRESHOLD 50
-#define CLOSE_BEACON 20
+#define CLOSE_BEACON 22
 #define NO_TIME -1
 #define LAST_HIGH_PWM 2
 #define RETURN_TO_BASE_TIME 50 // seconds
@@ -107,7 +107,7 @@ private:
     rclcpp::Clock steadyClock;
     double lastStepChange=0;
     unsigned int lastCommandHigh = 0;
-    const double startTime = 0;
+    double startTime = 0;
     double ninetyDegreeStartTime = 0;
     bool ninetyDegreeBool;
 };

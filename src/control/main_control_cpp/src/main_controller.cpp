@@ -203,6 +203,7 @@ void MainController::obstacleAvoidance(){
 }
 
 void MainController::updateState(){
+    RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
     if (carpet()){
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
@@ -225,6 +226,12 @@ void MainController::updateState(){
             state = RobotState::AIM_FOR_BEACON;
             RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON");
             break;
+        case RobotState::DROP_OFF_LEGO:
+            state = RobotState::STRAIGHT_LINE;
+            RCLCPP_INFO(this->get_logger(), "dropped off legos");
+            startTime = steadyClock.now().seconds();
+            break;
+
         default:
             state = RobotState::AIM_FOR_BEACON;
             RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted state is '%d'", static_cast<int>(state));
@@ -242,6 +249,10 @@ void MainController::updateState(){
     case RobotState::AIM_FOR_LEGOS:
         state = RobotState::STRAIGHT_LINE;
         RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE");
+        break;
+    case RobotState::TURN_AWAY_FROM_CARPET:
+        state = RobotState::STRAIGHT_LINE;
+        RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE from TURN_AWAY_FROM_CARPET");
         break;
     default:
         state = RobotState::STRAIGHT_LINE;
