@@ -57,7 +57,7 @@ bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> ins
 }
 
 bool MainController::choreography(){
-    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 12})});
+    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 13})});
 }
 
 
@@ -228,7 +228,7 @@ inline bool MainController::isInArea(){
 
 void MainController::updateState(){
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
-    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET))){
+    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY))){
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
     }
