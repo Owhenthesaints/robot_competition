@@ -15,14 +15,14 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
-#define MIDDLE_FRAME 750
+#define MIDDLE_FRAME 650
 #define THRESHOLD_MIDDLE 50
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
 #define BEACON_LOST_TIME 1
 #define MIDDLE_BEACON 400
 #define BEACON_THRESHOLD 50
-#define CLOSE_BEACON 22
+#define CLOSE_BEACON 20
 #define NO_TIME -1
 #define LAST_HIGH_PWM 2
 #define RETURN_TO_BASE_TIME 50 // seconds
