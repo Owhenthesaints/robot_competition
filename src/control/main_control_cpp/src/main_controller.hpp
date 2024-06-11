@@ -111,6 +111,7 @@ private:
     double startTime = 0;
     double ninetyDegreeStartTime = 0;
     bool ninetyDegreeBool;
+    bool dropOffLegoDone = false;
 };
 
 

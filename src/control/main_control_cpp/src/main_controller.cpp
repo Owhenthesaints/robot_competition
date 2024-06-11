@@ -9,7 +9,7 @@
 
 
 MainController::MainController() : rclcpp::Node("main_controller"),  backingOutInstruction({std::array<int8_t, 3>({-50, -50, 5}),
-                        std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds())
+                        std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds()), dropOffLegoDone(false)
 {
     state = RobotState::STRAIGHT_LINE;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
@@ -212,8 +212,9 @@ void MainController::updateState(){
     lastStepChange = steadyClock.now().seconds();
     // returning to base
     if(time > startTime + RETURN_TO_BASE_TIME){
-        if (inArea){
+        if (inArea && !dropOffLegoDone){
             state = RobotState::DROP_OFF_LEGO;
+            dropOffLegoDone = true;
             RCLCPP_INFO(this->get_logger(), "about to get into state DROP_OFF_LEGO");
             return;
         }
@@ -228,10 +229,10 @@ void MainController::updateState(){
             break;
         case RobotState::DROP_OFF_LEGO:
             state = RobotState::STRAIGHT_LINE;
+            dropOffLegoDone = false;
             RCLCPP_INFO(this->get_logger(), "dropped off legos");
             startTime = steadyClock.now().seconds();
             break;
-
         default:
             state = RobotState::AIM_FOR_BEACON;
             RCLCPP_INFO(this->get_logger(), "about to get into state AIM_FOR_BEACON defaulted state is '%d'", static_cast<int>(state));
