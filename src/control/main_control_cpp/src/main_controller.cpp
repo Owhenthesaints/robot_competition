@@ -57,7 +57,7 @@ bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> ins
 }
 
 bool MainController::choreography(){
-    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 5}), std::array<int8_t, 3>({-30, 30, 3})});
+    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 8}), std::array<int8_t, 3>({-30, 30, 3})});
 }
 
 
@@ -123,7 +123,7 @@ bool MainController::turnToBeacon() {
     RCLCPP_DEBUG(this->get_logger(), "in turn to beacon");
     // if beacon is on camera screen 
     double time = steadyClock.now().seconds();
-    if(time - foundBeaconTime< BEACON_LOST_TIME){
+    if((time - foundBeaconTime < BEACON_LOST_TIME) && !carpet()){
         if (((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD))){
             RCLCPP_INFO(this->get_logger(), "centered on beacon x position, '%f'", beaconPosition[0]);
             this->sendCommand(0, 0);
