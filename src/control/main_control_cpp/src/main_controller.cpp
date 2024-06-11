@@ -106,7 +106,8 @@ void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg)
 
 inline bool MainController::timeout(unsigned int timeoutVal)
 {
-    return static_cast<double>(timeoutVal) > lastStepChange + this->steadyClock.now().seconds();
+    RCLCPP_DEBUG(this->get_logger(), "timeout ? %s", this->steadyClock.now().seconds() > lastStepChange + static_cast<double>(timeoutVal)? "true" : "false");
+    return this->steadyClock.now().seconds() > lastStepChange + static_cast<double>(timeoutVal);
 }
 
 bool MainController::turnToBeacon() {
@@ -114,7 +115,7 @@ bool MainController::turnToBeacon() {
     // if beacon is on camera screen 
     double time = steadyClock.now().seconds();
     if(time - foundBeaconTime< BEACON_LOST_TIME){
-        if (((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD)) || (timeout(BEACON_TIMEOUT))){
+        if (((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD))){
             RCLCPP_INFO(this->get_logger(), "centered on beacon x position, '%f'", beaconPosition[0]);
             this->sendCommand(0, 0);
             return true;
@@ -129,6 +130,9 @@ bool MainController::turnToBeacon() {
         } else {
             RCLCPP_ERROR(this->get_logger(), "logic error in turn to beacon");
         }
+    }
+    else if(timeout(BEACON_TIMEOUT)){
+        return true;
     }
     else {
         this->slowTurn(true);
