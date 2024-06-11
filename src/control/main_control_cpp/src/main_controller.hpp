@@ -32,6 +32,7 @@
 #define TIME_FORGET_CARPET 1 // seconds
 #define MIN_HEIGHT_CARPET 250
 #define BEACON_TIMEOUT 40
+#define LAST_IN_AREA_TIME 2
 
 enum class RobotState {
     STRAIGHT_LINE,
@@ -59,6 +60,7 @@ private:
     bool ninetyDegree();
     bool dropOffLego();
     bool turnToLego();
+    bool isInArea();
     void carpetCallback(const carpetType::SharedPtr msg);
     /**
      * @brief get the positions of lego bricks
@@ -103,7 +105,7 @@ private:
     size_t backingOutStep = 0;
     double backingOutLastStepTime = 0;
     bool startedInstructions = false;
-    bool inArea = false;
+    double inArea = NO_TIME;
     double foundBeaconTime = NO_TIME;
     bool started = true;
     double foundCarpetTime = NO_TIME;
