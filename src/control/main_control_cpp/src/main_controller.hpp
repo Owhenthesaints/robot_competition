@@ -22,7 +22,7 @@
 #define BEACON_LOST_TIME 1
 #define MIDDLE_BEACON 400
 #define BEACON_THRESHOLD 50
-#define CLOSE_BEACON 20
+#define CLOSE_BEACON 16
 #define NO_TIME -1
 #define LAST_HIGH_PWM 2
 #define RETURN_TO_BASE_TIME 50 // seconds
