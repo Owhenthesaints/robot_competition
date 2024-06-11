@@ -11,7 +11,7 @@
 MainController::MainController() : rclcpp::Node("main_controller"),  backingOutInstruction({std::array<int8_t, 3>({-50, -50, 5}),
                         std::array<int8_t, 3>({30, -30, 3})}), started(true), steadyClock(RCL_STEADY_TIME), startTime(steadyClock.now().seconds()), dropOffLegoDone(false)
 {
-    state = RobotState::STRAIGHT_LINE;
+    state = RobotState::CHOREOGRAPHY;
     legoSubscription = this->create_subscription<legoVisionType>("robot/camera/lego_detected", 10, [this](const legoVisionType::SharedPtr msg)
                                                                  { this->legoDetectionCallback(msg); });
     distanceSensorSubscription = this->create_subscription<distanceType>("rx/distance/value", 10,
@@ -56,6 +56,10 @@ bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> ins
     return false;
 }
 
+bool MainController::choreography(){
+    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 5}), std::array<int8_t, 3>({-30, 30, 3})});
+}
+
 
 /**
  * @brief a function that follows a of predefined instructions to drop off the legos
@@ -68,6 +72,11 @@ void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
     float time = steadyClock.now().seconds();
     switch(state){
+    case RobotState::CHOREOGRAPHY:
+        RCLCPP_DEBUG(this->get_logger(), "in choreography in main_loop");
+        if(this->choreography())
+            this->updateState();
+        break;
     case RobotState::STRAIGHT_LINE:
         RCLCPP_DEBUG(this->get_logger(), "in straight_line in main_loop");
         this->obstacleAvoidance();
@@ -268,6 +277,10 @@ void MainController::updateState(){
     case RobotState::TURN_AWAY_FROM_CARPET:
         state = RobotState::STRAIGHT_LINE;
         RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE from TURN_AWAY_FROM_CARPET");
+        break;
+    case RobotState::CHOREOGRAPHY:
+        state = RobotState::STRAIGHT_LINE;
+        RCLCPP_INFO(this->get_logger(), "from CHOREOGRAPHY about to go to STRAIGHT_LINE");
         break;
     default:
         state = RobotState::STRAIGHT_LINE;

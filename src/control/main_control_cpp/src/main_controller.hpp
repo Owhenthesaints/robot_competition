@@ -35,6 +35,7 @@
 #define LAST_IN_AREA_TIME 2
 
 enum class RobotState {
+    CHOREOGRAPHY,
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
     AIM_FOR_BEACON,
@@ -62,6 +63,7 @@ private:
     bool turnToLego();
     bool isInArea();
     void carpetCallback(const carpetType::SharedPtr msg);
+    bool choreography();
     /**
      * @brief get the positions of lego bricks
     */
