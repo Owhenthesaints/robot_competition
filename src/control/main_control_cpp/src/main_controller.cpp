@@ -287,7 +287,7 @@ void MainController::legoDetectionCallback(const legoVisionType::SharedPtr msg){
 }
 
 void MainController::carpetCallback(const carpetType::SharedPtr msg){
-    if (MIN_CARPET_SIZE_X < msg->size_x){
+    if ((MIN_CARPET_SIZE_X < msg->size_x) && (MIN_HEIGHT_CARPET < msg->size_y)){
         foundCarpetTime = steadyClock.now().seconds();
     }
 }
