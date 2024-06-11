@@ -224,6 +224,7 @@ void MainController::updateState(){
     if(time > startTime + RETURN_TO_BASE_TIME){
         if (inArea && !dropOffLegoDone){
             state = RobotState::DROP_OFF_LEGO;
+            inArea = false;
             dropOffLegoDone = true;
             RCLCPP_INFO(this->get_logger(), "about to get into state DROP_OFF_LEGO");
             return;
@@ -240,6 +241,7 @@ void MainController::updateState(){
         case RobotState::DROP_OFF_LEGO:
             state = RobotState::STRAIGHT_LINE;
             dropOffLegoDone = false;
+            inArea=false;
             RCLCPP_INFO(this->get_logger(), "dropped off legos");
             startTime = steadyClock.now().seconds();
             break;
