@@ -104,11 +104,17 @@ void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg)
     inArea = (msg->size_x) > CLOSE_BEACON; // if the beacon is large enough we are in the zone
 }
 
+inline bool MainController::timeout(unsigned int timeoutVal)
+{
+    return static_cast<double>(timeoutVal) > lastStepChange + this->steadyClock.now().seconds();
+}
+
 bool MainController::turnToBeacon() {
     RCLCPP_DEBUG(this->get_logger(), "in turn to beacon");
     // if beacon is on camera screen 
-    if(steadyClock.now().seconds() - foundBeaconTime< BEACON_LOST_TIME){
-        if ((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD)){
+    double time = steadyClock.now().seconds();
+    if(time - foundBeaconTime< BEACON_LOST_TIME){
+        if (((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD)) || (timeout(BEACON_TIMEOUT))){
             RCLCPP_INFO(this->get_logger(), "centered on beacon x position, '%f'", beaconPosition[0]);
             this->sendCommand(0, 0);
             return true;

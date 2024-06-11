@@ -31,6 +31,7 @@
 #define MIN_CARPET_SIZE_X 500
 #define TIME_FORGET_CARPET 1 // seconds
 #define MIN_HEIGHT_CARPET 250
+#define BEACON_TIMEOUT 40
 
 enum class RobotState {
     STRAIGHT_LINE,
@@ -67,6 +68,10 @@ private:
      * @brief get the values of the distance sensors
     */
     void distanceCallback(const distanceType::SharedPtr msg);
+    /**
+     * @brief get a bool telling whether you timed out compared to last step
+     */
+    bool timeout(unsigned int timeoutVal);
     bool followInstructionSet(std::vector<std::array<int8_t, 3>> instructions);
     /**
      * @brief update the states
