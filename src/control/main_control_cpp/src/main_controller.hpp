@@ -24,7 +24,7 @@
 #define BEACON_THRESHOLD 50
 #define CLOSE_BEACON 20
 #define NO_TIME -1
-#define LAST_HIGH_PWM 2
+#define LAST_HIGH_PWM 1
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
 #define TIME_TO_GO_STRAIGHT 5
