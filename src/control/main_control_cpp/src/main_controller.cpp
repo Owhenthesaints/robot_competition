@@ -101,14 +101,21 @@ void MainController::mainLoop(){
 void MainController::purpleBeaconCallback(const purpleBeaconType::SharedPtr msg){
     foundBeaconTime = steadyClock.now().seconds();
     beaconPosition = {msg->center.position.x, msg->center.position.y};
-    inArea = (msg->size_x) > CLOSE_BEACON; // if the beacon is large enough we are in the zone
+    inArea = (msg->size_x) > CLOSE_BEACON ? steadyClock.now().seconds(): inArea; // if the beacon is large enough we are in the zone
+}
+
+inline bool MainController::timeout(unsigned int timeoutVal)
+{
+    RCLCPP_DEBUG(this->get_logger(), "timeout ? %s", this->steadyClock.now().seconds() > lastStepChange + static_cast<double>(timeoutVal)? "true" : "false");
+    return this->steadyClock.now().seconds() > lastStepChange + static_cast<double>(timeoutVal);
 }
 
 bool MainController::turnToBeacon() {
     RCLCPP_DEBUG(this->get_logger(), "in turn to beacon");
     // if beacon is on camera screen 
-    if(steadyClock.now().seconds() - foundBeaconTime< BEACON_LOST_TIME){
-        if ((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD)){
+    double time = steadyClock.now().seconds();
+    if(time - foundBeaconTime< BEACON_LOST_TIME){
+        if (((beaconPosition[0] <= MIDDLE_BEACON + BEACON_THRESHOLD)&&(beaconPosition[0] >= MIDDLE_BEACON - BEACON_THRESHOLD))){
             RCLCPP_INFO(this->get_logger(), "centered on beacon x position, '%f'", beaconPosition[0]);
             this->sendCommand(0, 0);
             return true;
@@ -123,6 +130,9 @@ bool MainController::turnToBeacon() {
         } else {
             RCLCPP_ERROR(this->get_logger(), "logic error in turn to beacon");
         }
+    }
+    else if(timeout(BEACON_TIMEOUT)){
+        return true;
     }
     else {
         this->slowTurn(true);
@@ -202,6 +212,10 @@ void MainController::obstacleAvoidance(){
     this->sendCommand(static_cast<int8_t>(motorInputs(0)), static_cast<int8_t>(motorInputs(1)));
 }
 
+inline bool MainController::isInArea(){
+    return steadyClock.now().seconds() < inArea + LAST_IN_AREA_TIME;
+}
+
 void MainController::updateState(){
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
     if (carpet()){
@@ -212,7 +226,7 @@ void MainController::updateState(){
     lastStepChange = steadyClock.now().seconds();
     // returning to base
     if(time > startTime + RETURN_TO_BASE_TIME){
-        if (inArea && !dropOffLegoDone){
+        if (isInArea() && !dropOffLegoDone){
             state = RobotState::DROP_OFF_LEGO;
             dropOffLegoDone = true;
             RCLCPP_INFO(this->get_logger(), "about to get into state DROP_OFF_LEGO");

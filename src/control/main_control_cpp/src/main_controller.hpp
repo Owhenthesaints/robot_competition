@@ -15,7 +15,7 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BOX_SIZE 500
-#define MIDDLE_FRAME 750
+#define MIDDLE_FRAME 650
 #define THRESHOLD_MIDDLE 50
 #define TIME_CHANGE_STATE_LOCAL 10
 #define TIME_CHANGE_STATE_TO_LEGO 5
@@ -31,6 +31,8 @@
 #define MIN_CARPET_SIZE_X 500
 #define TIME_FORGET_CARPET 1 // seconds
 #define MIN_HEIGHT_CARPET 250
+#define BEACON_TIMEOUT 40
+#define LAST_IN_AREA_TIME 2
 
 enum class RobotState {
     STRAIGHT_LINE,
@@ -58,6 +60,7 @@ private:
     bool ninetyDegree();
     bool dropOffLego();
     bool turnToLego();
+    bool isInArea();
     void carpetCallback(const carpetType::SharedPtr msg);
     /**
      * @brief get the positions of lego bricks
@@ -67,6 +70,10 @@ private:
      * @brief get the values of the distance sensors
     */
     void distanceCallback(const distanceType::SharedPtr msg);
+    /**
+     * @brief get a bool telling whether you timed out compared to last step
+     */
+    bool timeout(unsigned int timeoutVal);
     bool followInstructionSet(std::vector<std::array<int8_t, 3>> instructions);
     /**
      * @brief update the states
@@ -98,7 +105,7 @@ private:
     size_t backingOutStep = 0;
     double backingOutLastStepTime = 0;
     bool startedInstructions = false;
-    bool inArea = false;
+    double inArea = NO_TIME;
     double foundBeaconTime = NO_TIME;
     bool started = true;
     double foundCarpetTime = NO_TIME;
