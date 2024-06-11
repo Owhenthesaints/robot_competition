@@ -30,7 +30,7 @@
 #define TIME_TO_GO_STRAIGHT 5
 #define MIN_CARPET_SIZE_X 500
 #define TIME_FORGET_CARPET 1 // seconds
-#define MIN_HEIGHT_CARPET 400
+#define MIN_HEIGHT_CARPET 300
 
 enum class RobotState {
     STRAIGHT_LINE,
