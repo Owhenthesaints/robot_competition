@@ -24,7 +24,7 @@
 #define BEACON_THRESHOLD 50
 #define CLOSE_BEACON 16
 #define NO_TIME -1
-#define LAST_HIGH_PWM 2
+#define LAST_HIGH_PWM 1
 #define RETURN_TO_BASE_TIME 50 // seconds
 #define TIME_TO_DETECT_BEACON 20
 #define TIME_TO_GO_STRAIGHT 5
@@ -35,6 +35,7 @@
 #define LAST_IN_AREA_TIME 2
 
 enum class RobotState {
+    CHOREOGRAPHY,
     STRAIGHT_LINE,
     AIM_FOR_LEGOS,
     AIM_FOR_BEACON,
@@ -62,6 +63,7 @@ private:
     bool turnToLego();
     bool isInArea();
     void carpetCallback(const carpetType::SharedPtr msg);
+    bool choreography();
     /**
      * @brief get the positions of lego bricks
     */
