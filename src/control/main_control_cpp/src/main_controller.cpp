@@ -280,8 +280,8 @@ void MainController::updateState(){
         RCLCPP_INFO(this->get_logger(), "about to get into state STRAIGHT_LINE from TURN_AWAY_FROM_CARPET");
         break;
     case RobotState::CHOREOGRAPHY:
-        state = RobotState::STRAIGHT_LINE;
-        RCLCPP_INFO(this->get_logger(), "from CHOREOGRAPHY about to go to STRAIGHT_LINE");
+        state = RobotState::STRAIGHT_LINE_NO_CARPET;
+        RCLCPP_INFO(this->get_logger(), "from CHOREOGRAPHY about to go to STRAIGHT_LINE_NO_CARPET");
         break;
     case RobotState::STRAIGHT_LINE_NO_CARPET:
         if(!carpet())
