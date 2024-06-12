@@ -57,7 +57,7 @@ bool MainController::followInstructionSet(std::vector<std::array<int8_t, 3>> ins
 }
 
 bool MainController::choreography(){
-    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 13})});
+    return this->followInstructionSet({std::array<int8_t, 3>({100, 100, 15})});
 }
 
 
