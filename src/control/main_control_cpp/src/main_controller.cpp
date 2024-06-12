@@ -70,7 +70,6 @@ bool MainController::dropOffLego(){
 
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
-    RCLCPP_INFO(this->get_logger(), "SEEING CARPET %s", carpet()? "true": "false");
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::CHOREOGRAPHY:
