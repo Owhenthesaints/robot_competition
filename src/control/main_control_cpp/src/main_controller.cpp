@@ -70,6 +70,7 @@ bool MainController::dropOffLego(){
 
 void MainController::mainLoop(){
     RCLCPP_DEBUG(this->get_logger(), "in main loop with state %d", static_cast<int>(state));
+    RCLCPP_INFO(this->get_logger(), "SEEING CARPET %s", carpet()? "true": "false");
     float time = steadyClock.now().seconds();
     switch(state){
     case RobotState::CHOREOGRAPHY:
@@ -228,10 +229,11 @@ inline bool MainController::isInArea(){
 
 void MainController::updateState(){
     double time = steadyClock.now().seconds();
+    static bool CarpetTimeout = false;
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
     bool returnToBase = time > startTime + RETURN_TO_BASE_TIME;
-    bool CarpetTimeout = time > startTime + MIN_TIME_NO_CARPET; // becomes true after 30s
-    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY)) && (!CarpetTimeout)){
+    CarpetTimeout = time > startTime + MIN_TIME_NO_CARPET || CarpetTimeout; // becomes true after 30s
+    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY)) && (CarpetTimeout)){
         RCLCPP_INFO(this->get_logger(), "about to get into state turning away from carpet");
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
