@@ -33,6 +33,7 @@
 #define MIN_HEIGHT_CARPET 250
 #define BEACON_TIMEOUT 40
 #define LAST_IN_AREA_TIME 2
+#define MIN_TIME_NO_CARPET 30
 
 enum class RobotState {
     CHOREOGRAPHY,

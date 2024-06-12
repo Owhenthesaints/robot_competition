@@ -230,7 +230,9 @@ void MainController::updateState(){
     double time = steadyClock.now().seconds();
     RCLCPP_DEBUG(this->get_logger(),"carpet state %s", carpet()? "true": "false");
     bool returnToBase = time > startTime + RETURN_TO_BASE_TIME;
-    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY) || !returnToBase)){
+    bool CarpetTimeout = time > startTime + MIN_TIME_NO_CARPET; // becomes true after 30s
+    if (carpet() && (!(state==RobotState::STRAIGHT_LINE_NO_CARPET || state==RobotState::CHOREOGRAPHY)) && (!CarpetTimeout)){
+        RCLCPP_INFO(this->get_logger(), "about to get into state turning away from carpet");
         state = RobotState::TURN_AWAY_FROM_CARPET;
         return;
     }
@@ -257,6 +259,10 @@ void MainController::updateState(){
             dropOffLegoDone = false;
             RCLCPP_INFO(this->get_logger(), "dropped off legos");
             startTime = steadyClock.now().seconds();
+            break;
+        case RobotState::TURN_AWAY_FROM_CARPET:
+            state = RobotState::STRAIGHT_LINE;
+            RCLCPP_INFO(this->get_logger(), "from turn away from carpet into STRAIGHT_LINE in return to base");
             break;
         default:
             state = RobotState::AIM_FOR_BEACON;
