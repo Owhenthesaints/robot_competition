@@ -1,5 +1,12 @@
 # robot_competition
-Code for robot competition
+Code for robot competition a competition in which we had to create robots from scratch in order to collect legos. We spent the whole semester working on the project with Johan, Maya and myself. 
+
+![The team](robot_competition_group_picture.jpeg)
+
+
+![The competition](lowres_comp.gif)
+
+We arrived 3rd out of the 6 (one lego was dropped 1 cm from the base causing us to lose 2nd place) 
 
 
 
